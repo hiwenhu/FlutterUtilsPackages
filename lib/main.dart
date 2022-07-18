@@ -83,7 +83,7 @@ class _TestGoogleDriveApiState extends State<TestGoogleDriveApi> {
                       onPressed: () async {
                         try {
                           final googleSignIn = signIn.GoogleSignIn.standard(
-                              scopes: [drive.DriveApi.driveFileScope]);
+                              scopes: [drive.DriveApi.driveAppdataScope]);
                           final signIn.GoogleSignInAccount? account =
                               await googleSignIn.signIn();
                           print("User account $account");
@@ -97,45 +97,47 @@ class _TestGoogleDriveApiState extends State<TestGoogleDriveApi> {
                                     .asStream()
                                     .asBroadcastStream();
                             var media = drive.Media(mediaStream, 3);
-                            String? id;
-                            var isqlFolder = await driveApi.files.list(
-                                q: "name='isql' and mimeType='application/vnd.google-apps.folder' and trashed = false");
-                            if (isqlFolder.files?.isNotEmpty == true) {
-                              id = isqlFolder.files?.first.id;
-                            }
-                            if (id == null) {
-                              var driveFolder = drive.File();
-                              driveFolder.name = 'isql';
-                              driveFolder.mimeType =
-                                  "application/vnd.google-apps.folder";
-                              var folder =
-                                  await driveApi.files.create(driveFolder);
+                            // String? id;
+                            // var isqlFolder = await driveApi.files.list(
+                            //     q: "name='isql' and mimeType='application/vnd.google-apps.folder' and trashed = false");
+                            // if (isqlFolder.files?.isNotEmpty == true) {
+                            //   id = isqlFolder.files?.first.id;
+                            // }
+                            // if (id == null) {
+                            //   var driveFolder = drive.File();
+                            //   driveFolder.name = 'isql';
+                            //   driveFolder.mimeType =
+                            //       "application/vnd.google-apps.folder";
+                            //   var folder =
+                            //       await driveApi.files.create(driveFolder);
 
-                              id = folder.id;
-                            }
+                            //   id = folder.id;
+                            // }
 
-                            if (id != null) {
-                              var driveFile = drive.File();
-                              driveFile.name = "testfile.txt";
-                              var fileList = await driveApi.files.list(
-                                  q: "name='${driveFile.name}' and '$id' in parents and trashed = false");
-                              drive.File result;
-                              if (fileList.files?.isNotEmpty == true &&
-                                  fileList.files!.first.id != null) {
-                                result = await driveApi.files.update(
-                                    driveFile, fileList.files!.first.id!,
-                                    uploadMedia: media);
-                              } else {
-                                driveFile.parents = [
-                                  id
-                                ]; //新建文件时才能用这句，否则会报错，移动文件到其他目录使用update方法中的参数addParents removeParents
-                                result = await driveApi.files
-                                    .create(driveFile, uploadMedia: media);
-                              }
-                              print("Upload result: $result");
+                            // if (id != null) {
+                            var driveFile = drive.File();
+                            driveFile.name = "testfile1.txt";
+                            var fileList = await driveApi.files.list(
+                                q: "name='${driveFile.name}' and 'appDataFolder' in parents and trashed = false",
+                                spaces: 'appDataFolder',
+                                $fields: 'files(id)');
+                            drive.File result;
+                            if (fileList.files?.isNotEmpty == true &&
+                                fileList.files!.first.id != null) {
+                              result = await driveApi.files.update(
+                                  driveFile, fileList.files!.first.id!,
+                                  uploadMedia: media);
                             } else {
-                              print('Folder not exists');
+                              driveFile.parents = [
+                                'appDataFolder'
+                              ]; //新建文件时才能用这句，否则会报错，移动文件到其他目录使用update方法中的参数addParents removeParents
+                              result = await driveApi.files
+                                  .create(driveFile, uploadMedia: media);
                             }
+                            print("Upload result: $result");
+                            // } else {
+                            //   print('Folder not exists');
+                            // }
 
                             //   var pickRes = await FilePicker.platform.pickFiles();
 
