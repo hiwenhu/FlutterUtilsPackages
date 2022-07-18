@@ -164,11 +164,12 @@ class _HomePageState extends State<HomePage>
     with SingleTickerProviderStateMixin {
   late AnimationController _ctrl;
   late Future<List> imageFutre;
+  int duration = 10;
   @override
   void initState() {
     super.initState();
     _ctrl =
-        AnimationController(vsync: this, duration: const Duration(seconds: 10));
+        AnimationController(vsync: this, duration: Duration(seconds: duration));
     _ctrl.forward();
     imageFutre = loadImageByFile('assets/vango.jpg');
   }
@@ -177,6 +178,16 @@ class _HomePageState extends State<HomePage>
   void dispose() {
     _ctrl.dispose();
     super.dispose();
+  }
+
+  String getLeftTime() {
+    var left = (duration - duration * _ctrl.value).ceil();
+    int h = (left / 3600).floor();
+    left = left - h * 3600;
+    int m = (left / 60).floor();
+    left = left - m * 60;
+    int s = left;
+    return '${h.toString().padLeft(2, '0')} : ${m.toString().padLeft(2, '0')} : ${s.toString().padLeft(2, '0')}';
   }
 
   @override
@@ -193,60 +204,67 @@ class _HomePageState extends State<HomePage>
           ),
         ],
       ),
-      body: Center(
-        child: Padding(
-          padding: const EdgeInsets.all(12.0),
-          child: FutureBuilder<List>(
-            future: imageFutre,
-            builder: (BuildContext context, snapshot) {
-              if (snapshot.hasData && snapshot.data != null) {
-                var image = snapshot.data![0];
-                return OrientationBuilder(
-                  builder: (context, orientation) {
-                    print('--------------- orientation $orientation');
-                    return Stack(
-                      children: [
-                        const Positioned(
-                          child: Center(
-                            child: SizedBox(
-                              width: 600,
-                              height: 700,
-                              child: FittedBox(
-                                fit: BoxFit.fill,
-                                child: Image(
-                                    image: AssetImage("assets/printer.png")),
-                              ),
-                            ),
-                          ),
-                        ),
-                        Positioned(
-                          top: 353,
-                          left: 50,
-                          child: Center(
-                            child: SizedBox(
-                              width: 240,
-                              height: 360,
-                              //<--- 使用绘制组件
-                              child: CustomPaint(
-                                // size: Size(100, 100),
-                                painter: ShapePainter(
-                                    factor: _ctrl,
-                                    image: snapshot.data![0],
-                                    grayScaleImage: snapshot.data![1],
-                                    imagePkgImg: snapshot.data![2]), //<--- 设置画板
-                              ),
-                            ),
-                          ),
-                        ),
-                      ],
-                    );
-                  },
-                );
-              }
-              return const CircularProgressIndicator();
-            },
-          ),
-        ),
+      body: FutureBuilder<List>(
+        future: imageFutre,
+        builder: (BuildContext context, snapshot) {
+          if (snapshot.hasData && snapshot.data != null) {
+            var image = snapshot.data![0];
+            return Stack(
+              fit: StackFit.passthrough,
+              children: [
+                const Positioned(
+                  left: 12,
+                  right: 12,
+                  child: SizedBox(
+                    width: 300,
+                    height: 600,
+                    child: FittedBox(
+                      fit: BoxFit.fill,
+                      child: Image(image: AssetImage("assets/printer.png")),
+                    ),
+                  ),
+                ),
+                Positioned(
+                  top: 100,
+                  left: 0,
+                  right: 0,
+                  child: Center(
+                    child: AnimatedBuilder(
+                      animation: _ctrl,
+                      builder: (context, __) => Text(
+                        getLeftTime(),
+                        style: Theme.of(context)
+                            .textTheme
+                            .headline2
+                            ?.copyWith(color: Colors.white),
+                      ),
+                    ),
+                  ),
+                ),
+                Positioned(
+                  top: 330,
+                  left: 60,
+                  child: Center(
+                    child: SizedBox(
+                      width: 240,
+                      height: 360,
+                      //<--- 使用绘制组件
+                      child: CustomPaint(
+                        // size: Size(100, 100),
+                        painter: ShapePainter(
+                            factor: _ctrl,
+                            image: snapshot.data![0],
+                            grayScaleImage: snapshot.data![1],
+                            imagePkgImg: snapshot.data![2]), //<--- 设置画板
+                      ),
+                    ),
+                  ),
+                ),
+              ],
+            );
+          }
+          return const CircularProgressIndicator();
+        },
       ),
     );
   }
