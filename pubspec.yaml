@@ -40,10 +40,17 @@ dependencies:
   google_sign_in: ^5.4.0
   http: ^0.13.4
   file_picker: ^4.6.1
+  flutter_bloc: ^8.0.1
+  equatable: ^2.0.3
   # image_downloader: ^0.31.0
   # image_editor_pro: ^1.1.8
   # firexcode: ^1.0.8
   # image_picker: ^0.7.5+4
+  authentication_repository:
+    path: packages/authentication_repository
+  flow_builder: ^0.0.9
+  shared_preferences: ^2.0.15
+  badges: ^2.0.3
 
 dev_dependencies:
   flutter_test:

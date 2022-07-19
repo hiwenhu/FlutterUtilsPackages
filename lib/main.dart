@@ -1,15 +1,30 @@
-import 'package:file_picker/file_picker.dart';
+import 'package:authentication_repository/authentication_repository.dart';
 import 'package:flutter/material.dart';
-import 'package:flutter/services.dart';
-import 'dart:io';
-import 'package:googleapis/drive/v3.dart' as drive;
+import 'package:flutter_bloc/flutter_bloc.dart';
 import 'package:google_sign_in/google_sign_in.dart' as signIn;
+import 'package:googleapis/drive/v3.dart' as drive;
+import 'package:testimage/cloud/switch/cubit/cloud_switch_cubit.dart';
 
+import 'app/view/app.dart';
 import 'google_auth_client.dart';
 
-void main() {
-  runApp(const MyApp());
+Future<void> main() {
+  return BlocOverrides.runZoned(
+    () async {
+      WidgetsFlutterBinding.ensureInitialized();
+      // await Firebase.initializeApp();
+      final authenticationRepository = AuthenticationRepository();
+      await authenticationRepository.loginWithGoogleSliently();
+      // await authenticationRepository.user.first;
+      runApp(App(authenticationRepository: authenticationRepository, cloudSwitchStatus: await CloudSwitchCubit.getSwitch(),));
+    },
+    // blocObserver: AppBlocObserver(),
+  );
 }
+
+// void main() {
+//   runApp(const MyApp());
+// }
 
 class MyApp extends StatelessWidget {
   const MyApp({Key? key}) : super(key: key);
