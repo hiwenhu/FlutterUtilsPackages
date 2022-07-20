@@ -1,3 +1,5 @@
+import 'dart:io';
+
 import 'package:authentication_repository/authentication_repository.dart';
 import 'package:flutter/material.dart';
 import 'package:flutter_bloc/flutter_bloc.dart';
@@ -16,7 +18,10 @@ Future<void> main() {
       final authenticationRepository = AuthenticationRepository();
       await authenticationRepository.loginWithGoogleSliently();
       // await authenticationRepository.user.first;
-      runApp(App(authenticationRepository: authenticationRepository, cloudSwitchStatus: await CloudSwitchCubit.getSwitch(),));
+      runApp(App(
+        authenticationRepository: authenticationRepository,
+        cloudSwitchStatus: await CloudSwitchCubit.getSwitch(),
+      ));
     },
     // blocObserver: AppBlocObserver(),
   );
