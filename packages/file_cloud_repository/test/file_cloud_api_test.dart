@@ -1,6 +1,6 @@
 import 'package:flutter_test/flutter_test.dart';
 
-import 'package:file_cloud_api/file_cloud_api.dart';
+import 'package:file_cloud_repository/file_cloud_repository.dart';
 
 void main() {
   test('adds one to input values', () {

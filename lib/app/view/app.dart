@@ -7,6 +7,7 @@ import 'package:testimage/app/bloc/app_bloc.dart';
 import 'package:testimage/cloud/switch/cubit/cloud_switch_cubit.dart';
 import 'package:testimage/cloud/view/cloud_settings_page.dart';
 import 'package:testimage/cloud/view/cloud_wrapper.dart';
+import 'package:testimage/files_overview/view/files_overview_page.dart';
 import 'package:testimage/login/cubit/login_cubit.dart';
 
 class App extends StatelessWidget {
@@ -58,22 +59,23 @@ class _AppViewState extends State<AppView> {
       //   state: context.select((AppBloc bloc) => bloc.state.status),
       //   onGeneratePages: onGenerateAppViewPages,
       // ),
-      home: Scaffold(
-        appBar: AppBar(
-          title: const Text('Test Cloud Sync'),
-        ),
-        body: SafeArea(
-          child: Align(
-            alignment: Alignment.center,
-            child: Column(
-              children: const [
-                CloudWrapper(child: Text('data')),
-                CloudSettingPage(),
-              ],
-            ),
-          ),
-        ),
-      ),
+      home: const FilesOverviewPage(),
+      // Scaffold(
+      //   appBar: AppBar(
+      //     title: const Text('Test Cloud Sync'),
+      //   ),
+      //   body: SafeArea(
+      //     child: Align(
+      //       alignment: Alignment.center,
+      //       child: Column(
+      //         children: const [
+      //           CloudWrapper(child: Text('data')),
+      //           CloudSettingPage(),
+      //         ],
+      //       ),
+      //     ),
+      //   ),
+      // ),
     );
   }
 }

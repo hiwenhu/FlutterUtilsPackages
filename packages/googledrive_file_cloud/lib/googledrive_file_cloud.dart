@@ -1,7 +1,5 @@
 library googledrive_file_cloud;
 
-/// A Calculator.
-class Calculator {
-  /// Returns [value] plus 1.
-  int addOne(int value) => value + 1;
-}
+export 'src/cloud/google_auth_client.dart';
+export 'src/cloud/googledrive_file_repository.dart';
+export 'src/cloud/googledrive_cloud_api.dart';

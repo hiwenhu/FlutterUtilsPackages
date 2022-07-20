@@ -1,4 +1,4 @@
-name: file_cloud_api
+name: file_cloud_repository
 description: A new Flutter package project.
 version: 0.0.1
 homepage:
@@ -13,6 +13,7 @@ dependencies:
     sdk: flutter
   cloud_api:
     path: ../cloud_api
+  rxdart: ^0.27.5
 
 dev_dependencies:
   flutter_test:

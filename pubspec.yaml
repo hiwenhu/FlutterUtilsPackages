@@ -51,6 +51,11 @@ dependencies:
   flow_builder: ^0.0.9
   shared_preferences: ^2.0.15
   badges: ^2.0.3
+  googledrive_file_cloud:
+    path: packages/googledrive_file_cloud
+  file_cloud_repository:
+    path: packages/file_cloud_repository
+  bloc: ^8.0.3
 
 dev_dependencies:
   flutter_test:

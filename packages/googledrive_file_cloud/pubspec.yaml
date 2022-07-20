@@ -13,11 +13,12 @@ dependencies:
     sdk: flutter
   cloud_api:
     path: ../cloud_api
-  file_cloud_api:
-    path: ../file_cloud_api
+  file_cloud_repository:
+    path: ../file_cloud_repository
   googleapis: ^9.1.0
   google_sign_in: ^5.4.0
   http: ^0.13.4
+  path_provider: ^2.0.11
   
 
 dev_dependencies:
