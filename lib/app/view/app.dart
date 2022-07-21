@@ -1,14 +1,9 @@
 import 'package:authentication_repository/authentication_repository.dart';
-import 'package:flow_builder/flow_builder.dart';
 import 'package:flutter/material.dart';
 import 'package:flutter_bloc/flutter_bloc.dart';
-import 'package:google_sign_in/google_sign_in.dart';
 import 'package:testimage/app/bloc/app_bloc.dart';
 import 'package:testimage/cloud/switch/cubit/cloud_switch_cubit.dart';
-import 'package:testimage/cloud/view/cloud_settings_page.dart';
-import 'package:testimage/cloud/view/cloud_wrapper.dart';
 import 'package:testimage/files_overview/view/files_overview_page.dart';
-import 'package:testimage/login/cubit/login_cubit.dart';
 
 class App extends StatelessWidget {
   const App({

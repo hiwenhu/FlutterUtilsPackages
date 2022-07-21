@@ -8,27 +8,31 @@ class FilesOverviewState extends Equatable {
     this.files = const [],
     // this.filter = TodosViewFilter.all,
     this.lastDeletedFile,
+    this.errorMessage,
   });
 
   final FilesOverviewStatus status;
   final List<File> files;
   // final TodosViewFilter filter;
   final File? lastDeletedFile;
+  final String? errorMessage;
 
   // Iterable<Todo> get filteredTodos => filter.applyAll(todos);
 
   FilesOverviewState copyWith({
     FilesOverviewStatus Function()? status,
-    List<File> Function()? todos,
+    List<File> Function()? files,
     // TodosViewFilter Function()? filter,
-    File? Function()? lastDeletedTodo,
+    File? Function()? lastDeletedFile,
+    String? errorMessage,
   }) {
     return FilesOverviewState(
       status: status != null ? status() : this.status,
-      files: todos != null ? todos() : this.files,
+      files: files != null ? files() : this.files,
       // filter: filter != null ? filter() : this.filter,
       lastDeletedFile:
-          lastDeletedTodo != null ? lastDeletedTodo() : this.lastDeletedFile,
+          lastDeletedFile != null ? lastDeletedFile() : this.lastDeletedFile,
+      errorMessage: errorMessage ?? this.errorMessage,
     );
   }
 
@@ -38,5 +42,6 @@ class FilesOverviewState extends Equatable {
         files,
         // filter,
         lastDeletedFile,
+        errorMessage,
       ];
 }

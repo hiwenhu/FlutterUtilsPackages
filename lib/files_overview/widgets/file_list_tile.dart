@@ -1,5 +1,5 @@
 import 'dart:io';
-
+import 'package:path/path.dart';
 import 'package:flutter/material.dart';
 
 class FileListTile extends StatelessWidget {
@@ -22,7 +22,8 @@ class FileListTile extends StatelessWidget {
     final captionColor = theme.textTheme.caption?.color;
 
     return Dismissible(
-      key: Key('todoListTile_dismissible_${file.path}'),
+      // key: Key('todoListTile_dismissible_${file.path}'),
+      key: UniqueKey(),
       onDismissed: onDismissed,
       direction: DismissDirection.endToStart,
       background: Container(
@@ -37,7 +38,7 @@ class FileListTile extends StatelessWidget {
       child: ListTile(
         onTap: onTap,
         title: Text(
-          file.absolute.path,
+          basename(file.path),
           maxLines: 1,
           overflow: TextOverflow.ellipsis,
           // style: !file.isCompleted

@@ -11,48 +11,56 @@ class CloudSwitchPage extends StatelessWidget {
     final user = context.select((AppBloc bloc) => bloc.state.user);
     final useCloud =
         context.select((CloudSwitchCubit cubit) => cubit.state.status);
-    return Column(children: [
-      if (user != null)
-        ListTile(
-          leading: GoogleUserCircleAvatar(identity: user),
-          title: Text(user.email),
-          trailing: IconButton(
-            key: const Key('homePage_logout_iconButton'),
-            icon: const Icon(Icons.exit_to_app),
-            onPressed: () {
-              showDialog(
-                  context: context,
-                  builder: (context) => AlertDialog(
-                        content: const Text("Are you sure to quit"),
-                        actions: [
-                          TextButton(
-                            onPressed: () {
-                              context.read<AppBloc>().add(AppLogoutRequested());
-                              context.read<CloudSwitchCubit>().switchOff();
-                              Navigator.pop(context);
-                            },
-                            child: const Text("OK"),
-                          ),
-                          TextButton(
-                            onPressed: () => Navigator.pop(context),
-                            child: const Text("Cancel"),
-                          ),
-                        ],
-                      ));
-            },
+    return Scaffold(
+      appBar: AppBar(
+        title: const Text("Settings"),
+      ),
+      body: Column(children: [
+        if (user != null)
+          ListTile(
+            leading: GoogleUserCircleAvatar(identity: user),
+            title: Text(user.email),
+            trailing: IconButton(
+              key: const Key('homePage_logout_iconButton'),
+              icon: const Icon(Icons.exit_to_app),
+              onPressed: () {
+                showDialog(
+                    context: context,
+                    builder: (context) => AlertDialog(
+                          content: const Text("Are you sure to quit"),
+                          actions: [
+                            TextButton(
+                              onPressed: () {
+                                context
+                                    .read<AppBloc>()
+                                    .add(AppLogoutRequested());
+                                context.read<CloudSwitchCubit>().switchOff();
+                                Navigator.pop(context);
+                              },
+                              child: const Text("OK"),
+                            ),
+                            TextButton(
+                              onPressed: () => Navigator.pop(context),
+                              child: const Text("Cancel"),
+                            ),
+                          ],
+                        ));
+              },
+            ),
           ),
-        ),
-      SwitchListTile.adaptive(
-          title: const Text('Using Cloud Sync'),
-          subtitle: const Text('Sync your connections and scripts with Cloud'),
-          value: useCloud == CloudSwitchStatus.on,
-          onChanged: (value) {
-            if (value) {
-              context.read<CloudSwitchCubit>().switchOn();
-            } else {
-              context.read<CloudSwitchCubit>().switchOff();
-            }
-          }),
-    ]);
+        SwitchListTile.adaptive(
+            title: const Text('Using Cloud Sync'),
+            subtitle:
+                const Text('Sync your connections and scripts with Cloud'),
+            value: useCloud == CloudSwitchStatus.on,
+            onChanged: (value) {
+              if (value) {
+                context.read<CloudSwitchCubit>().switchOn();
+              } else {
+                context.read<CloudSwitchCubit>().switchOff();
+              }
+            }),
+      ]),
+    );
   }
 }

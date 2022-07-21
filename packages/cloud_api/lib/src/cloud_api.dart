@@ -2,6 +2,6 @@ import 'dart:io';
 
 abstract class CloudApi {
   Future<void> saveFile(File file);
-  Future<void> deleteFile(String fileName);
-  Future<List<File>> listFile();
+  Future<void> deleteFile(File file);
+  Future<List> listFile();
 }

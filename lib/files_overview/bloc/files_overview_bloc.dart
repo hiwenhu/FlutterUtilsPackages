@@ -21,6 +21,12 @@ class FilesOverviewBloc extends Bloc<FilesOverviewEvent, FilesOverviewState> {
     // on<TodosOverviewClearCompletedRequested>(_onClearCompletedRequested);
   }
 
+  @override
+  Future<void> close() {
+    _fileCloudRepository.close();
+    return super.close();
+  }
+
   final FileCloudRepository _fileCloudRepository;
 
   Future<void> _onSubscriptionRequested(
@@ -29,14 +35,17 @@ class FilesOverviewBloc extends Bloc<FilesOverviewEvent, FilesOverviewState> {
   ) async {
     emit(state.copyWith(status: () => FilesOverviewStatus.loading));
 
+    await _fileCloudRepository.refresh();
+
     await emit.forEach<List<File>>(
       _fileCloudRepository.getFiles(),
       onData: (todos) => state.copyWith(
         status: () => FilesOverviewStatus.success,
-        todos: () => todos,
+        files: () => todos,
       ),
-      onError: (_, __) => state.copyWith(
+      onError: (e, __) => state.copyWith(
         status: () => FilesOverviewStatus.failure,
+        errorMessage: e.toString(),
       ),
     );
   }
@@ -53,7 +62,7 @@ class FilesOverviewBloc extends Bloc<FilesOverviewEvent, FilesOverviewState> {
     FilesOverviewTodoDeleted event,
     Emitter<FilesOverviewState> emit,
   ) async {
-    emit(state.copyWith(lastDeletedTodo: () => event.file));
+    emit(state.copyWith(lastDeletedFile: () => event.file));
     await _fileCloudRepository.deleteFile(event.file);
   }
 
