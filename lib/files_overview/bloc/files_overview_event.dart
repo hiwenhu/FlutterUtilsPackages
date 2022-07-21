@@ -27,7 +27,7 @@ class FilesOverviewSubscriptionRequested extends FilesOverviewEvent {
 class FilesOverviewTodoDeleted extends FilesOverviewEvent {
   const FilesOverviewTodoDeleted(this.file);
 
-  final File file;
+  final FileCloud file;
 
   @override
   List<Object> get props => [file];

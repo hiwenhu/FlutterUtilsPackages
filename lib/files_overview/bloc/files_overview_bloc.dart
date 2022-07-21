@@ -3,6 +3,7 @@ import 'dart:io';
 import 'package:bloc/bloc.dart';
 import 'package:equatable/equatable.dart';
 import 'package:file_cloud_repository/file_cloud_repository.dart';
+import 'package:file_cloud_repository/models/models.dart';
 
 part 'files_overview_event.dart';
 part 'files_overview_state.dart';
@@ -37,11 +38,11 @@ class FilesOverviewBloc extends Bloc<FilesOverviewEvent, FilesOverviewState> {
 
     await _fileCloudRepository.refresh();
 
-    await emit.forEach<List<File>>(
+    await emit.forEach<List<FileCloud>>(
       _fileCloudRepository.getFiles(),
-      onData: (todos) => state.copyWith(
+      onData: (files) => state.copyWith(
         status: () => FilesOverviewStatus.success,
-        files: () => todos,
+        files: () => files,
       ),
       onError: (e, __) => state.copyWith(
         status: () => FilesOverviewStatus.failure,
@@ -63,7 +64,7 @@ class FilesOverviewBloc extends Bloc<FilesOverviewEvent, FilesOverviewState> {
     Emitter<FilesOverviewState> emit,
   ) async {
     emit(state.copyWith(lastDeletedFile: () => event.file));
-    await _fileCloudRepository.deleteFile(event.file);
+    await _fileCloudRepository.deleteFile(event.file.file);
   }
 
   // Future<void> _onUndoDeletionRequested(

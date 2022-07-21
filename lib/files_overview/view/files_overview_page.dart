@@ -51,15 +51,25 @@ class FilesOverviewView extends StatelessWidget {
       appBar: AppBar(
         title: const Text('Files'),
         actions: [
-          IconButton(
-            onPressed: () {
-              context
-                  .read<FilesOverviewBloc>()
-                  .add(const FilesOverviewSubscriptionRequested());
+          BlocSelector<FilesOverviewBloc, FilesOverviewState,
+              FilesOverviewStatus>(
+            selector: (state) {
+              return state.status;
             },
-            icon: const Icon(
-              Icons.refresh,
-            ),
+            builder: (context, status) {
+              return IconButton(
+                onPressed: status == FilesOverviewStatus.loading
+                    ? null
+                    : () {
+                        context
+                            .read<FilesOverviewBloc>()
+                            .add(const FilesOverviewSubscriptionRequested());
+                      },
+                icon: const Icon(
+                  Icons.refresh,
+                ),
+              );
+            },
           ),
         ],
       ),
@@ -118,7 +128,7 @@ class FilesOverviewView extends StatelessWidget {
                 children: [
                   for (final file in state.files)
                     FileListTile(
-                      file: file,
+                      file: file.file,
                       // onToggleCompleted: (isCompleted) {
                       //   context.read<FilesOverviewBloc>().add(
                       //         FilesOverviewTodoCompletionToggled(

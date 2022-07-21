@@ -2,6 +2,7 @@ import 'dart:async';
 import 'dart:io';
 
 import 'package:bloc/bloc.dart';
+import 'package:device_info_plus/device_info_plus.dart';
 import 'package:equatable/equatable.dart';
 import 'package:file_cloud_repository/file_cloud_repository.dart';
 
@@ -33,8 +34,13 @@ class EditFileBloc extends Bloc<EditFileEvent, EditFileState> {
 
     try {
       final file = (state.initialFile ?? File('tmp'));
-      // await file.writeAsString(state.content); TODO emulator read only
-      await _fileCloudRepository.saveFile(file);
+      if (Platform.isAndroid) {
+        DeviceInfoPlugin deviceInfo = DeviceInfoPlugin();
+        AndroidDeviceInfo androidInfo = await deviceInfo.androidInfo;
+        if (androidInfo.isPhysicalDevice == true) {
+          await file.writeAsString(state.content);
+        }
+      }
       emit(state.copyWith(
         status: EditFileStatus.success,
       ));

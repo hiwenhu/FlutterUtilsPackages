@@ -12,18 +12,18 @@ class FilesOverviewState extends Equatable {
   });
 
   final FilesOverviewStatus status;
-  final List<File> files;
+  final List<FileCloud> files;
   // final TodosViewFilter filter;
-  final File? lastDeletedFile;
+  final FileCloud? lastDeletedFile;
   final String? errorMessage;
 
   // Iterable<Todo> get filteredTodos => filter.applyAll(todos);
 
   FilesOverviewState copyWith({
     FilesOverviewStatus Function()? status,
-    List<File> Function()? files,
+    List<FileCloud> Function()? files,
     // TodosViewFilter Function()? filter,
-    File? Function()? lastDeletedFile,
+    FileCloud? Function()? lastDeletedFile,
     String? errorMessage,
   }) {
     return FilesOverviewState(
