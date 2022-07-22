@@ -235,8 +235,25 @@ class GoogleDriveCloudApi extends CloudApi {
       //  final directory = await getExternalStorageDirectory();
       //  print(directory.path);
       //  final saveFile = File('${directory.path}/${new DateTime.now().millisecondsSinceEpoch}$fName');
-      return [cloudFile.stream, cloudFile.length, fileList.files!.first.version];
+      // return [cloudFile.stream, cloudFile.length, fileList.files!.first.version];
+      var testData = [
+        100,
+        100,
+        100,
+      ];
+
+      const downloadProgressStops = [0.0, 0.15, 0.45, 0.8, 1.0];
+      Stream<List<int>> mediaStream = () async* {
+        for (final stop in downloadProgressStops) {
+          // Wait a second to simulate varying download speeds.
+          await Future<void>.delayed(const Duration(seconds: 1));
+          yield testData;
+        }
+      }();
+
+      return [mediaStream, downloadProgressStops.length * testData.length, "1"];
     }
-    return [null, 0];
+
+    return [null, 0, null];
   }
 }

@@ -240,7 +240,7 @@ class FileCloudRepository<CA extends CloudApi> {
       List<int> dataStore = [];
       await for (var data in stream) {
         dataStore.insertAll(dataStore.length, data);
-        yield data.length / length;
+        yield dataStore.length / length;
       }
       log("Task Done");
       await fileCloud.file.writeAsBytes(dataStore);

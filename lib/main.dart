@@ -8,6 +8,7 @@ import 'package:googleapis/drive/v3.dart' as drive;
 import 'package:googledrive_file_cloud/googledrive_file_cloud.dart';
 import 'package:testimage/cloud/switch/cubit/cloud_switch_cubit.dart';
 
+import 'app/app_bloc_observer.dart';
 import 'app/view/app.dart';
 import 'google_auth_client.dart';
 
@@ -29,6 +30,6 @@ Future<void> main() {
         cloudSwitchStatus: cloudSwitch,
       ));
     },
-    // blocObserver: AppBlocObserver(),
+    blocObserver: AppBlocObserver(),
   );
 }
