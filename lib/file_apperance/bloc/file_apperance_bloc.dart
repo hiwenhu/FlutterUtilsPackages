@@ -15,6 +15,11 @@ class FileApperanceBloc extends Bloc<FileApperanceEvent, FileApperanceState> {
         )) {
     on<FileDownloadingEvent>(_onFileDownloading);
     on<FileUploadingEvent>(_onFileUploading);
+    if (fileCloud.needDownloading) {
+      add(FileDownloadingEvent());
+    } else if (fileCloud.needUploading) {
+      add(FileUploadingEvent());
+    }
   }
 
   final FileCloudRepository fileCloudRepository;
@@ -23,18 +28,30 @@ class FileApperanceBloc extends Bloc<FileApperanceEvent, FileApperanceState> {
       FileDownloadingEvent event, Emitter<FileApperanceState> emit) async {
     emit(state.copyWith(status: FileApperanceStatus.downloading));
     try {
-      await fileCloudRepository.download(
-        state.fileCloud,
-        () => emit(state.copyWith(
-          fileCloud: state.fileCloud.copyWith(
-            version: state.fileCloud.cloudVersion,
-          ),
-          status: FileApperanceStatus.success,
-        )),
-      );
+      // var fileCloud = await fileCloudRepository.download(
+      //   state.fileCloud,
+      // );
+
+      // emit(state.copyWith(
+      //   fileCloud: fileCloud,
+      //   status: FileApperanceStatus.success,
+      // ));
+
+      await for (var result
+          in fileCloudRepository.downloadStream(state.fileCloud)) {
+        if (result is double) {
+          emit(state.copyWith(progress: result));
+        } else if (result is FileCloud) {
+          emit(state.copyWith(
+            fileCloud: result,
+            status: FileApperanceStatus.success,
+          ));
+        }
+      }
     } catch (e) {
       emit(state.copyWith(
         status: FileApperanceStatus.failure,
+        errorMessage: e.toString(),
       ));
     }
   }
@@ -51,6 +68,7 @@ class FileApperanceBloc extends Bloc<FileApperanceEvent, FileApperanceState> {
     } catch (e) {
       emit(state.copyWith(
         status: FileApperanceStatus.failure,
+        errorMessage: e.toString(),
       ));
     }
   }

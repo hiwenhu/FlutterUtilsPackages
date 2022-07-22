@@ -41,6 +41,9 @@ class EditFileBloc extends Bloc<EditFileEvent, EditFileState> {
           await file.writeAsString(state.content);
         }
       }
+
+      _fileCloudRepository.saveFile(file);
+
       emit(state.copyWith(
         status: EditFileStatus.success,
       ));

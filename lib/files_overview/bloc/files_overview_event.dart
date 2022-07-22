@@ -11,6 +11,10 @@ class FilesOverviewSubscriptionRequested extends FilesOverviewEvent {
   const FilesOverviewSubscriptionRequested();
 }
 
+class FilesOverviewRefreshRequested extends FilesOverviewEvent {
+  const FilesOverviewRefreshRequested();
+}
+
 // class TodosOverviewTodoCompletionToggled extends TodosOverviewEvent {
 //   const TodosOverviewTodoCompletionToggled({
 //     required this.todo,

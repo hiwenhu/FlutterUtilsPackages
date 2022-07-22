@@ -32,13 +32,18 @@ class CloudSettingPage extends StatelessWidget {
               },
               child: BlocBuilder<LoginCubit, LoginState>(
                 builder: (context, state) {
-                  return state.status == LoginStatus.inProgress
-                      ? const CircularProgressIndicator()
-                      : IconButton(
-                          onPressed: () {
-                            context.read<LoginCubit>().logInWithGoogle();
-                          },
-                          icon: const Icon(Icons.cloud));
+                  return Scaffold(
+                    body: Center(
+                      child: state.status == LoginStatus.inProgress
+                          ? const CircularProgressIndicator()
+                          : IconButton(
+                              onPressed: () {
+                                context.read<LoginCubit>().logInWithGoogle();
+                              },
+                              icon: const Icon(Icons.cloud),
+                            ),
+                    ),
+                  );
                 },
               ),
             ),

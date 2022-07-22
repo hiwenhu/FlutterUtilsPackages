@@ -5,6 +5,9 @@ import 'googledrive_cloud_api.dart';
 
 class GoogleDriveFileRepository
     extends FileCloudRepository<GoogleDriveCloudApi> {
-  GoogleDriveFileRepository({GoogleSignInAccount? account})
-      : super(cloudApi: GoogleDriveCloudApi(account: account));
+  GoogleDriveFileRepository(GoogleSignIn googleSignIn, bool useCloud)
+      : super(
+          cloudApi: GoogleDriveCloudApi(googleSignIn),
+          useCloud: useCloud,
+        );
 }

@@ -14,6 +14,7 @@ class FilesOverviewBloc extends Bloc<FilesOverviewEvent, FilesOverviewState> {
   })  : _fileCloudRepository = fileCloudRepository,
         super(const FilesOverviewState()) {
     on<FilesOverviewSubscriptionRequested>(_onSubscriptionRequested);
+    on<FilesOverviewRefreshRequested>(_onRefreshRequested);
     // on<TodosOverviewTodoCompletionToggled>(_onTodoCompletionToggled);
     on<FilesOverviewTodoDeleted>(_onTodoDeleted);
     // on<TodosOverviewUndoDeletionRequested>(_onUndoDeletionRequested);
@@ -49,6 +50,15 @@ class FilesOverviewBloc extends Bloc<FilesOverviewEvent, FilesOverviewState> {
         errorMessage: e.toString(),
       ),
     );
+  }
+
+  Future<void> _onRefreshRequested(
+    FilesOverviewRefreshRequested event,
+    Emitter<FilesOverviewState> emit,
+  ) async {
+    emit(state.copyWith(status: () => FilesOverviewStatus.loading));
+    
+    await _fileCloudRepository.refresh();
   }
 
   // Future<void> _onTodoCompletionToggled(

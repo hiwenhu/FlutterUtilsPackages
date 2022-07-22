@@ -6,6 +6,7 @@ import 'package:googledrive_file_cloud/googledrive_file_cloud.dart';
 import 'package:testimage/app/view/app_drawer.dart';
 import 'package:testimage/cloud/switch/cubit/cloud_switch_cubit.dart';
 import 'package:testimage/edit_file/view/edit_file_page.dart';
+import 'package:testimage/file_apperance/view/file_apperance_widget.dart';
 import 'package:testimage/files_overview/bloc/files_overview_bloc.dart';
 import 'package:testimage/files_overview/widgets/file_list_tile.dart';
 
@@ -16,18 +17,13 @@ class FilesOverviewPage extends StatelessWidget {
   Widget build(BuildContext context) {
     return BlocBuilder<CloudSwitchCubit, CloudSwitchState>(
       builder: (context, state) {
-        var fileCloudRepository = GoogleDriveFileRepository(
-            account: context.read<AuthenticationRepository>().currentUser);
         return
             // state.status == CloudSwitchStatus.on?
             BlocProvider<FilesOverviewBloc>(
           create: (context) => FilesOverviewBloc(
-            fileCloudRepository: fileCloudRepository,
+            fileCloudRepository: context.read<GoogleDriveFileRepository>(),
           )..add(const FilesOverviewSubscriptionRequested()),
-          child: RepositoryProvider.value(
-            value: fileCloudRepository,
-            child: const FilesOverviewView(),
-          ),
+          child: const FilesOverviewView(),
         )
             // : Scaffold(
             //     appBar: AppBar(
@@ -127,27 +123,31 @@ class FilesOverviewView extends StatelessWidget {
               child: ListView(
                 children: [
                   for (final file in state.files)
-                    FileListTile(
-                      file: file.file,
-                      // onToggleCompleted: (isCompleted) {
-                      //   context.read<FilesOverviewBloc>().add(
-                      //         FilesOverviewTodoCompletionToggled(
-                      //           file: todo,
-                      //           isCompleted: isCompleted,
-                      //         ),
-                      //       );
-                      // },
-                      onDismissed: (_) {
-                        context
-                            .read<FilesOverviewBloc>()
-                            .add(FilesOverviewTodoDeleted(file));
-                      },
-                      // onTap: () {
-                      //   Navigator.of(context).push(
-                      //     EditTodoPage.route(initialTodo: todo),
-                      //   );
-                      // },
-                    ),
+                    FileApperanceWidget(
+                      key: UniqueKey(),//必須有，否則刷新不了，因爲内部是BlocProvider
+                      fileCloud: file,
+                    )
+                  // FileListTile(
+                  //   file: file.file,
+                  //   // onToggleCompleted: (isCompleted) {
+                  //   //   context.read<FilesOverviewBloc>().add(
+                  //   //         FilesOverviewTodoCompletionToggled(
+                  //   //           file: todo,
+                  //   //           isCompleted: isCompleted,
+                  //   //         ),
+                  //   //       );
+                  //   // },
+                  //   onDismissed: (_) {
+                  //     context
+                  //         .read<FilesOverviewBloc>()
+                  //         .add(FilesOverviewTodoDeleted(file));
+                  //   },
+                  //   // onTap: () {
+                  //   //   Navigator.of(context).push(
+                  //   //     EditTodoPage.route(initialTodo: todo),
+                  //   //   );
+                  //   // },
+                  // ),
                 ],
               ),
             );

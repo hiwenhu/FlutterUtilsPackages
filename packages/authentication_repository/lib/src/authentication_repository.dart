@@ -20,9 +20,11 @@ class AuthenticationRepository {
             scopes: [drive.DriveApi.driveAppdataScope]);
   final sign_in.GoogleSignIn _googleSignIn;
 
+  sign_in.GoogleSignIn get googleSignIn => _googleSignIn;
+
   Future<void> loginWithGoogleSliently() async {
     try {
-      final sign_in.GoogleSignInAccount? account = await _googleSignIn.signIn();
+      await _googleSignIn.signInSilently();
       // if (account == null) {
       //   throw const LogInWithGoogleFailure('No valid google account');
       // }
@@ -37,8 +39,8 @@ class AuthenticationRepository {
       if (account == null) {
         throw const LogInWithGoogleFailure('No valid google account');
       }
-    } catch (_) {
-      throw const LogInWithGoogleFailure();
+    } catch (e) {
+      throw LogInWithGoogleFailure(e.toString());
     }
   }
 

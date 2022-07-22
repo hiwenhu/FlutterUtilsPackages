@@ -1,26 +1,37 @@
 import 'package:authentication_repository/authentication_repository.dart';
+import 'package:file_cloud_repository/file_cloud_repository.dart';
 import 'package:flutter/material.dart';
 import 'package:flutter_bloc/flutter_bloc.dart';
 import 'package:testimage/app/bloc/app_bloc.dart';
 import 'package:testimage/cloud/switch/cubit/cloud_switch_cubit.dart';
 import 'package:testimage/files_overview/view/files_overview_page.dart';
 
-class App extends StatelessWidget {
+class App<FC extends FileCloudRepository> extends StatelessWidget {
   const App({
     Key? key,
     required AuthenticationRepository authenticationRepository,
+    required FC fileCloudReposity,
     CloudSwitchStatus cloudSwitchStatus = CloudSwitchStatus.off,
   })  : _authenticationRepository = authenticationRepository,
+        _fileCloudReposity = fileCloudReposity,
         _cloudSwitchStatus = cloudSwitchStatus,
         super(key: key);
 
   final AuthenticationRepository _authenticationRepository;
+  final FC _fileCloudReposity;
   final CloudSwitchStatus _cloudSwitchStatus;
 
   @override
   Widget build(BuildContext context) {
-    return RepositoryProvider.value(
-      value: _authenticationRepository,
+    return MultiRepositoryProvider(
+      providers: [
+        RepositoryProvider.value(
+          value: _authenticationRepository,
+        ),
+        RepositoryProvider.value(
+          value: _fileCloudReposity,
+        ),
+      ],
       child: MultiBlocProvider(
         providers: [
           BlocProvider<AppBloc>(
@@ -29,7 +40,9 @@ class App extends StatelessWidget {
             ),
           ),
           BlocProvider<CloudSwitchCubit>(
-            create: (_) => CloudSwitchCubit(status: _cloudSwitchStatus),
+            create: (_) => CloudSwitchCubit(
+                fileCloudRepository: _fileCloudReposity,
+                status: _cloudSwitchStatus),
           ),
         ],
         child: const AppView(),

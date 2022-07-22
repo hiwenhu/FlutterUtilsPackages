@@ -39,7 +39,7 @@ dependencies:
   googleapis: ^9.1.0
   google_sign_in: ^5.4.0
   http: ^0.13.4
-  file_picker: ^4.6.1
+  # file_picker: ^4.6.1
   flutter_bloc: ^8.0.1
   equatable: ^2.0.3
   # image_downloader: ^0.31.0
