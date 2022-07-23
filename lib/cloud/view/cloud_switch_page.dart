@@ -3,6 +3,7 @@ import 'package:flutter_bloc/flutter_bloc.dart';
 import 'package:google_sign_in/widgets.dart';
 import 'package:testimage/app/bloc/app_bloc.dart';
 import 'package:testimage/cloud/switch/cubit/cloud_switch_cubit.dart';
+import 'package:testimage/files_overview/bloc/files_overview_bloc.dart';
 
 class CloudSwitchPage extends StatelessWidget {
   const CloudSwitchPage({Key? key}) : super(key: key);
@@ -56,6 +57,9 @@ class CloudSwitchPage extends StatelessWidget {
             onChanged: (value) {
               if (value) {
                 context.read<CloudSwitchCubit>().switchOn();
+                context
+                    .read<FilesOverviewBloc>()
+                    .add(const FilesOverviewLoadFromCloud());
               } else {
                 context.read<CloudSwitchCubit>().switchOff();
               }

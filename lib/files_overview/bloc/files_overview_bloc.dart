@@ -1,9 +1,11 @@
+import 'dart:async';
 import 'dart:io';
 
 import 'package:bloc/bloc.dart';
 import 'package:equatable/equatable.dart';
 import 'package:file_cloud_repository/file_cloud_repository.dart';
 import 'package:file_cloud_repository/models/models.dart';
+import 'package:flutter/services.dart';
 
 part 'files_overview_event.dart';
 part 'files_overview_state.dart';
@@ -15,6 +17,7 @@ class FilesOverviewBloc extends Bloc<FilesOverviewEvent, FilesOverviewState> {
         super(const FilesOverviewState()) {
     on<FilesOverviewSubscriptionRequested>(_onSubscriptionRequested);
     on<FilesOverviewRefreshRequested>(_onRefreshRequested);
+    on<FilesOverviewLoadFromCloud>(_onLoadFromCloud);
     // on<TodosOverviewTodoCompletionToggled>(_onTodoCompletionToggled);
     on<FilesOverviewTodoDeleted>(_onTodoDeleted);
     // on<TodosOverviewUndoDeletionRequested>(_onUndoDeletionRequested);
@@ -115,4 +118,23 @@ class FilesOverviewBloc extends Bloc<FilesOverviewEvent, FilesOverviewState> {
   // ) async {
   //   await _fileCloudRepository.clearCompleted();
   // }
+
+  FutureOr<void> _onLoadFromCloud(FilesOverviewLoadFromCloud event,
+      Emitter<FilesOverviewState> emit) async {
+    if (_fileCloudRepository.canUseCloud) {
+      emit(state.copyWith(status: FilesOverviewStatus.loadingCloud));
+      await Future.delayed(Duration(seconds: 10));
+      try {
+        await _fileCloudRepository.loadFromCloud();
+        emit(state.copyWith(status: FilesOverviewStatus.success));
+      } catch (e) {
+        emit(
+          state.copyWith(
+            status: FilesOverviewStatus.success,
+            errorMessage: (e is PlatformException) ? e.code : e.toString(),
+          ),
+        );
+      }
+    }
+  }
 }

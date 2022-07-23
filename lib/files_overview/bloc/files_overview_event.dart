@@ -11,6 +11,10 @@ class FilesOverviewSubscriptionRequested extends FilesOverviewEvent {
   const FilesOverviewSubscriptionRequested();
 }
 
+class FilesOverviewLoadFromCloud extends FilesOverviewEvent {
+  const FilesOverviewLoadFromCloud();
+}
+
 class FilesOverviewRefreshRequested extends FilesOverviewEvent {
   const FilesOverviewRefreshRequested();
 }

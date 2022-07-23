@@ -4,6 +4,7 @@ import 'package:flutter/material.dart';
 import 'package:flutter_bloc/flutter_bloc.dart';
 import 'package:testimage/app/bloc/app_bloc.dart';
 import 'package:testimage/cloud/switch/cubit/cloud_switch_cubit.dart';
+import 'package:testimage/files_overview/bloc/files_overview_bloc.dart';
 import 'package:testimage/files_overview/view/files_overview_page.dart';
 
 class App<FC extends FileCloudRepository> extends StatelessWidget {
@@ -44,6 +45,10 @@ class App<FC extends FileCloudRepository> extends StatelessWidget {
                 fileCloudRepository: _fileCloudReposity,
                 status: _cloudSwitchStatus),
           ),
+          BlocProvider<FilesOverviewBloc>(
+              create: (context) => FilesOverviewBloc(
+                    fileCloudRepository: _fileCloudReposity,
+                  )..add(const FilesOverviewSubscriptionRequested())),
         ],
         child: const AppView(),
       ),

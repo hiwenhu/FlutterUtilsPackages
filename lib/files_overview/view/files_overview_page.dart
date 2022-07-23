@@ -7,6 +7,7 @@ import 'package:testimage/app/view/app_drawer.dart';
 import 'package:testimage/cloud/switch/cubit/cloud_switch_cubit.dart';
 import 'package:testimage/edit_file/view/edit_file_page.dart';
 import 'package:testimage/file_apperance/view/file_apperance_widget.dart';
+import 'package:testimage/file_apperance/widget/icon_circularprogress_indicator.dart';
 import 'package:testimage/files_overview/bloc/files_overview_bloc.dart';
 import 'package:testimage/files_overview/widgets/file_list_tile.dart';
 
@@ -17,22 +18,7 @@ class FilesOverviewPage extends StatelessWidget {
   Widget build(BuildContext context) {
     return BlocBuilder<CloudSwitchCubit, CloudSwitchState>(
       builder: (context, state) {
-        return
-            // state.status == CloudSwitchStatus.on?
-            BlocProvider<FilesOverviewBloc>(
-          create: (context) => FilesOverviewBloc(
-            fileCloudRepository: context.read<GoogleDriveFileRepository>(),
-          )..add(const FilesOverviewSubscriptionRequested()),
-          child: const FilesOverviewView(),
-        )
-            // : Scaffold(
-            //     appBar: AppBar(
-            //       title: const Text("Files"),
-            //     ),
-            //     body: const SafeArea(child: Center(child: Text('Todo'))),
-            //     drawer: const AppDrawer(),
-            //   )
-            ;
+        return const FilesOverviewView();
       },
     );
   }
@@ -106,6 +92,11 @@ class FilesOverviewView extends StatelessWidget {
               //     child: CupertinoActivityIndicator(
               //   color: Colors.yellow,
               // ),);
+            } else if (state.status == FilesOverviewStatus.loadingCloud) {
+              return const Center(
+                  child: IconCircularProgressIndicator(
+                child: Icon(Icons.cloud_download),
+              ));
             } else if (state.status != FilesOverviewStatus.success) {
               return const SizedBox();
             } else if (state.files.isEmpty) {
@@ -124,7 +115,7 @@ class FilesOverviewView extends StatelessWidget {
                 children: [
                   for (final file in state.files)
                     FileApperanceWidget(
-                      key: UniqueKey(),//必須有，否則刷新不了，因爲内部是BlocProvider
+                      key: UniqueKey(), //必須有，否則刷新不了，因爲内部是BlocProvider
                       fileCloud: file,
                     )
                   // FileListTile(

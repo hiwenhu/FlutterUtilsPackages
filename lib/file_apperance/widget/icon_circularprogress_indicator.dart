@@ -14,7 +14,7 @@ class IconCircularProgressIndicator extends StatelessWidget {
   Widget build(BuildContext context) {
     return Stack(
       children: [
-        CircularProgressIndicator(
+        CircularProgressIndicator.adaptive(
           value: progress,
         ),
         Positioned.fill(child: child),

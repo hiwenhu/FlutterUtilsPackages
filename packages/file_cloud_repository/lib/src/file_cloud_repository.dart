@@ -120,8 +120,7 @@ class FileCloudRepository<CA extends CloudApi> {
       //   log(e.toString(), stackTrace: st);
       // });
       if (canUseCloud) {
-        var cloudfiles = await cloudApi.listFile();
-        onCloudFiles(cloudfiles);
+        await loadFromCloud();
       } else {
         _filesStreamController.add(localFiles);
       }
@@ -129,6 +128,11 @@ class FileCloudRepository<CA extends CloudApi> {
       _filesStreamController.add(localFiles);
       log(e.toString(), stackTrace: st);
     }
+  }
+
+  Future<void> loadFromCloud() async {
+    var cloudfiles = await cloudApi.listFile();
+    onCloudFiles(cloudfiles);
   }
 
   void onCloudFiles(List files) {

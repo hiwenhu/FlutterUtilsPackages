@@ -1,6 +1,6 @@
 part of 'files_overview_bloc.dart';
 
-enum FilesOverviewStatus { initial, loading, success, failure }
+enum FilesOverviewStatus { initial, loading, loadingCloud, success, failure }
 
 class FilesOverviewState extends Equatable {
   const FilesOverviewState({
