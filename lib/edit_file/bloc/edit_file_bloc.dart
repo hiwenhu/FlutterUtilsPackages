@@ -33,7 +33,7 @@ class EditFileBloc extends Bloc<EditFileEvent, EditFileState> {
     ));
 
     try {
-      final file = (state.initialFile ?? File('tmp'));
+      final file = (state.initialFile ?? _fileCloudRepository.newFile('tmp'));
       if (Platform.isAndroid) {
         DeviceInfoPlugin deviceInfo = DeviceInfoPlugin();
         AndroidDeviceInfo androidInfo = await deviceInfo.androidInfo;

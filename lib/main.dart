@@ -6,12 +6,22 @@ import 'package:flutter_bloc/flutter_bloc.dart';
 import 'package:google_sign_in/google_sign_in.dart' as signIn;
 import 'package:googleapis/drive/v3.dart' as drive;
 import 'package:googledrive_file_cloud/googledrive_file_cloud.dart';
+import 'package:path_provider/path_provider.dart';
 import 'package:testimage/cloud/switch/cubit/cloud_switch_cubit.dart';
 
 import 'app/app_bloc_observer.dart';
 import 'app/view/app.dart';
 import 'google_auth_client.dart';
-
+Future<Directory> getLocalFileRoot() async {
+    var directory = await getApplicationSupportDirectory();
+    var rootDirName = 'tmp';
+    // if (exists) {
+    var root = Directory('${directory.path}/$rootDirName');
+    if (!await root.exists()) {
+      root = await root.create();
+    }
+    return root;
+  }
 Future<void> main() {
   return BlocOverrides.runZoned(
     () async {
@@ -21,6 +31,7 @@ Future<void> main() {
       await authenticationRepository.loginWithGoogleSliently();
       var cloudSwitch = await CloudSwitchCubit.getSwitch();
       final fileCloudReposity = GoogleDriveFileRepository(
+          await getLocalFileRoot(),
           authenticationRepository.googleSignIn,
           cloudSwitch == CloudSwitchStatus.on);
       // await authenticationRepository.user.first;

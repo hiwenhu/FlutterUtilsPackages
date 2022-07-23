@@ -1,3 +1,4 @@
+import 'package:flutter/services.dart';
 import 'package:googleapis/drive/v3.dart' as drive;
 import 'package:google_sign_in/google_sign_in.dart' as sign_in;
 
@@ -39,6 +40,8 @@ class AuthenticationRepository {
       if (account == null) {
         throw const LogInWithGoogleFailure('No valid google account');
       }
+    } on PlatformException catch (e) {
+      throw LogInWithGoogleFailure(e.code);
     } catch (e) {
       throw LogInWithGoogleFailure(e.toString());
     }

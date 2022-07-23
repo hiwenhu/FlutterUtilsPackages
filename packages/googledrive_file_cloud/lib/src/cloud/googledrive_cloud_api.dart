@@ -196,13 +196,21 @@ class GoogleDriveCloudApi extends CloudApi {
       drive.File result;
       if (fileList.files?.isNotEmpty == true &&
           fileList.files!.first.id != null) {
-        result = await driveApi.files
-            .update(driveFile, fileList.files!.first.id!, uploadMedia: media);
+        result = await driveApi.files.update(
+            driveFile, fileList.files!.first.id!,
+            uploadMedia: media, $fields: 'id');
       } else {
         //新建文件时才能用这句，否则会报错，移动文件到其他目录使用update方法中的参数addParents removeParents
         driveFile.parents = ['appDataFolder'];
-
-        result = await driveApi.files.create(driveFile, uploadMedia: media);
+        result = await driveApi.files
+            .create(driveFile, uploadMedia: media, $fields: 'id');
+      }
+      String? cloudVersioni;
+      if (result.id != null) {
+        result = await driveApi.files.get(
+          result.id!,
+          $fields: "version"
+        ) as drive.File;
       }
       log("Upload result: $result");
       return result.version;
@@ -232,28 +240,34 @@ class GoogleDriveCloudApi extends CloudApi {
         // $fields: 'files(id, version)',
       );
       drive.Media cloudFile = result as drive.Media;
-      //  final directory = await getExternalStorageDirectory();
-      //  print(directory.path);
-      //  final saveFile = File('${directory.path}/${new DateTime.now().millisecondsSinceEpoch}$fName');
-      // return [cloudFile.stream, cloudFile.length, fileList.files!.first.version];
-      var testData = [
-        100,
-        100,
-        100,
+      return [
+        cloudFile.stream,
+        cloudFile.length,
+        fileList.files!.first.version
       ];
+      // var testData = [
+      //   100,
+      //   100,
+      //   100,
+      // ];
 
-      const downloadProgressStops = [0.0, 0.15, 0.45, 0.8, 1.0];
-      Stream<List<int>> mediaStream = () async* {
-        for (final stop in downloadProgressStops) {
-          // Wait a second to simulate varying download speeds.
-          await Future<void>.delayed(const Duration(seconds: 1));
-          yield testData;
-        }
-      }();
+      // const downloadProgressStops = [0.0, 0.15, 0.45, 0.8, 1.0];
+      // Stream<List<int>> mediaStream = () async* {
+      //   for (final stop in downloadProgressStops) {
+      //     // Wait a second to simulate varying download speeds.
+      //     await Future<void>.delayed(const Duration(seconds: 1));
+      //     yield testData;
+      //   }
+      // }();
 
-      return [mediaStream, downloadProgressStops.length * testData.length, "1"];
+      // return [mediaStream, downloadProgressStops.length * testData.length, "1"];
     }
 
     return [null, 0, null];
+  }
+
+  @override
+  bool isAuth() {
+    return googleSignIn.currentUser != null;
   }
 }

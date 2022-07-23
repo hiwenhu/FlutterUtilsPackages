@@ -35,18 +35,21 @@ class FilesOverviewBloc extends Bloc<FilesOverviewEvent, FilesOverviewState> {
     FilesOverviewSubscriptionRequested event,
     Emitter<FilesOverviewState> emit,
   ) async {
-    emit(state.copyWith(status: () => FilesOverviewStatus.loading));
+    emit(state.copyWith(status: FilesOverviewStatus.loading));
 
     await _fileCloudRepository.refresh();
 
     await emit.forEach<List<FileCloud>>(
       _fileCloudRepository.getFiles(),
-      onData: (files) => state.copyWith(
-        status: () => FilesOverviewStatus.success,
-        files: () => files,
-      ),
+      onData: (files) {
+        var newState = state.copyWith(
+          status: FilesOverviewStatus.success,
+          files: files,
+        );
+        return newState;
+      },
       onError: (e, __) => state.copyWith(
-        status: () => FilesOverviewStatus.failure,
+        status: FilesOverviewStatus.failure,
         errorMessage: e.toString(),
       ),
     );
@@ -56,8 +59,8 @@ class FilesOverviewBloc extends Bloc<FilesOverviewEvent, FilesOverviewState> {
     FilesOverviewRefreshRequested event,
     Emitter<FilesOverviewState> emit,
   ) async {
-    emit(state.copyWith(status: () => FilesOverviewStatus.loading));
-    
+    emit(state.copyWith(status: FilesOverviewStatus.loading));
+
     await _fileCloudRepository.refresh();
   }
 
@@ -73,7 +76,7 @@ class FilesOverviewBloc extends Bloc<FilesOverviewEvent, FilesOverviewState> {
     FilesOverviewTodoDeleted event,
     Emitter<FilesOverviewState> emit,
   ) async {
-    emit(state.copyWith(lastDeletedFile: () => event.file));
+    emit(state.copyWith(lastDeletedFile: event.file));
     await _fileCloudRepository.deleteFile(event.file.file);
   }
 

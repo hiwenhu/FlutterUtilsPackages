@@ -14,6 +14,9 @@ extension FileApperanceStatusX on FileApperanceStatus {
         FileApperanceStatus.uploading,
         FileApperanceStatus.downloading
       ].contains(this);
+
+  bool get isDownloading => FileApperanceStatus.downloading == this;
+  bool get isUploading => FileApperanceStatus.uploading == this;
 }
 
 class FileApperanceState extends Equatable {

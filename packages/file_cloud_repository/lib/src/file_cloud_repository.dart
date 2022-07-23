@@ -8,6 +8,7 @@ import 'package:googleapis/drive/v3.dart' as drive;
 import 'package:path/path.dart';
 import 'package:path_provider/path_provider.dart';
 import 'package:rxdart/subjects.dart';
+import 'package:shared_preferences/shared_preferences.dart';
 
 enum FileSyncOper { save, delete }
 
@@ -17,6 +18,7 @@ class FileCloudOff implements Exception {}
 
 class FileCloudRepository<CA extends CloudApi> {
   FileCloudRepository({
+    required this.localFileRoot,
     required this.cloudApi,
     required this.useCloud,
   }) {
@@ -53,28 +55,43 @@ class FileCloudRepository<CA extends CloudApi> {
     FileSyncOper.delete: [],
   };
 
+  final Directory localFileRoot;
+
   bool useCloud;
+
+  bool get canUseCloud => useCloud && cloudApi.isAuth();
 
   void close() {
     _filesStreamController.close();
   }
 
+  File newFile(String fileName) {
+    var originPath = '${localFileRoot.path}/$fileName';
+    var path = originPath;
+    int postfix = 1;
+    while (
+        localFiles.indexWhere((element) => element.file.path == path) != -1) {
+      path = '$originPath (${postfix++})';
+    }
+    return File(path);
+  }
+
+  String localFileVersionKey(File file) {
+    return '${file.path}_v';
+  }
+
   Future<void> refresh() async {
     try {
-      var directory = await getApplicationSupportDirectory();
-
-      bool exists = await directory.exists();
-      var subDirName = 'tmp';
-      // if (exists) {
-      var subDir = Directory('${directory.path}/$subDirName');
-      subDir = await subDir.create();
-      // }
-
       localFiles.clear();
-      await for (var data in subDir.list()) {
+      var sp = await SharedPreferences.getInstance();
+
+      await for (var data in localFileRoot.list()) {
         if (data is File) {
           localFiles.add(FileCloud(
             file: data,
+            version: getFileVersion(
+              sp.getString(localFileVersionKey(data)),
+            ),
           ));
         }
       }
@@ -102,38 +119,38 @@ class FileCloudRepository<CA extends CloudApi> {
       //   _filesStreamController.add(const []);
       //   log(e.toString(), stackTrace: st);
       // });
-      if (useCloud) {
+      if (canUseCloud) {
         var cloudfiles = await cloudApi.listFile();
         onCloudFiles(cloudfiles);
       } else {
         _filesStreamController.add(localFiles);
       }
     } catch (e, st) {
-      _filesStreamController.add(const []);
+      _filesStreamController.add(localFiles);
       log(e.toString(), stackTrace: st);
     }
   }
 
   void onCloudFiles(List files) {
-    for (var nativeFile in files) {
-      if (nativeFile is drive.File) {
+    for (var cloudFile in files) {
+      if (cloudFile is drive.File) {
         int index = localFiles.indexWhere(
-            (element) => basename(element.file.path) == nativeFile.name);
-        var cloudVersion = getCloudVersion(nativeFile.version);
+            (element) => basename(element.file.path) == cloudFile.name);
+        var cloudVersion = getFileVersion(cloudFile.version);
         if (index != -1) {
           // if (localFile.version > getCloudVersion(nativeFile.version)) {
           //   needSyncFiles[FileSyncOper.save]?.add(localFile);
           // }
           localFiles[index] = localFiles[index].copyWith(
             // version: cloudVersion, 需要同步，現在不能更新version
-            cloudFileName: nativeFile.name ?? '',
+            cloudFileName: cloudFile.name ?? '',
             cloudVersion: cloudVersion,
           );
-        } else {
+        } else if (cloudFile.name != null) {
           localFiles.add(FileCloud(
-            file: File(nativeFile.name ?? 'tmp'),
+            file: File('${localFileRoot.path}/${cloudFile.name}'),
             // version: cloudVersion, 需要同步，現在不能更新version
-            cloudFileName: nativeFile.name ?? '',
+            cloudFileName: cloudFile.name ?? '',
             cloudVersion: cloudVersion,
           ));
         }
@@ -142,7 +159,7 @@ class FileCloudRepository<CA extends CloudApi> {
     _filesStreamController.add(localFiles);
   }
 
-  int getCloudVersion(String? version) {
+  int getFileVersion(String? version) {
     return int.tryParse(version ?? '1') ?? 1;
   }
 
@@ -194,15 +211,20 @@ class FileCloudRepository<CA extends CloudApi> {
     final index = localFiles.indexWhere((t) => t.file.path == file.path);
 
     if (index >= 0) {
+      var sp = await SharedPreferences.getInstance();
+      var localFile = localFiles[index].file;
+      sp.remove(localFileVersionKey(localFile));
+      localFile.delete();
+
       localFiles.removeAt(index);
       _filesStreamController.add(localFiles);
+
       needSyncFiles[FileSyncOper.delete]?.add(FileCloud(file: file));
       needSyncFiles[FileSyncOper.save]
           ?.removeWhere((element) => element.file == file);
     }
     if (useCloud) {
-      // cloudApi.deleteFile(file);
-
+      cloudApi.deleteFile(file);
     }
   }
 
@@ -215,11 +237,11 @@ class FileCloudRepository<CA extends CloudApi> {
       fileCloud.cloudFileName,
     );
     var fc = fileCloud.copyWith(
-      version: getCloudVersion(cloudVersion),
+      version: getFileVersion(cloudVersion),
     );
 
-    final index = localFiles
-        .indexWhere((t) => t.cloudFileName == fileCloud.cloudFileName);
+    final index =
+        localFiles.indexWhere((t) => t.file.path == fileCloud.file.path);
     if (index >= 0) {
       localFiles[index] = fc;
     } else {
@@ -232,6 +254,11 @@ class FileCloudRepository<CA extends CloudApi> {
     if (!useCloud) {
       throw FileCloudOff();
     }
+
+    if (!cloudApi.isAuth()) {
+      yield null;
+    }
+
     var result = await cloudApi.downloadStream(fileCloud.cloudFileName);
     Stream<List<int>>? stream = result[0];
     int length = int.tryParse(result[1].toString()) ?? 1;
@@ -245,12 +272,17 @@ class FileCloudRepository<CA extends CloudApi> {
       log("Task Done");
       await fileCloud.file.writeAsBytes(dataStore);
       log("File saved at ${fileCloud.file.path}");
+      var cv = getFileVersion(cloudVersion);
       var fc = fileCloud.copyWith(
-        version: getCloudVersion(cloudVersion),
+        version: cv,
+        cloudVersion: cv,
       );
 
-      final index = localFiles
-          .indexWhere((t) => t.cloudFileName == fileCloud.cloudFileName);
+      var sp = await SharedPreferences.getInstance();
+      sp.setString(localFileVersionKey(fileCloud.file), cv.toString());
+
+      final index =
+          localFiles.indexWhere((t) => t.file.path == fileCloud.file.path);
       if (index >= 0) {
         localFiles[index] = fc;
       } else {
@@ -261,16 +293,23 @@ class FileCloudRepository<CA extends CloudApi> {
     yield null;
   }
 
-  Future<FileCloud> upload(FileCloud fileCloud) async {
+  Future<FileCloud?> upload(FileCloud fileCloud) async {
     if (!useCloud) {
       throw FileCloudOff();
     }
-    int cloudVersion = getCloudVersion(
+
+    if (!cloudApi.isAuth()) {
+      return null;
+    }
+
+    int cloudVersion = getFileVersion(
         await cloudApi.upload(fileCloud.file, fileCloud.cloudFileName));
+    var sp = await SharedPreferences.getInstance();
+    sp.setString(localFileVersionKey(fileCloud.file), cloudVersion.toString());
     var fc =
         fileCloud.copyWith(version: cloudVersion, cloudVersion: cloudVersion);
-    final index = localFiles
-        .indexWhere((t) => t.cloudFileName == fileCloud.cloudFileName);
+    final index =
+        localFiles.indexWhere((t) => t.file.path == fileCloud.file.path);
     if (index >= 0) {
       localFiles[index] = fc;
     } else {

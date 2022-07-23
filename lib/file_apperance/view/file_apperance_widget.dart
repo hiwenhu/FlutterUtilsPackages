@@ -6,6 +6,8 @@ import 'package:googledrive_file_cloud/googledrive_file_cloud.dart';
 import 'package:path/path.dart';
 import 'package:testimage/edit_file/view/edit_file_page.dart';
 import 'package:testimage/file_apperance/bloc/file_apperance_bloc.dart';
+import 'package:testimage/file_apperance/widget/icon_circularprogress_indicator.dart';
+import 'package:testimage/files_overview/bloc/files_overview_bloc.dart';
 
 class FileApperanceWidget extends StatelessWidget {
   const FileApperanceWidget({Key? key, required this.fileCloud})
@@ -41,20 +43,33 @@ class FileApperanceListTile extends StatelessWidget {
       child: BlocBuilder<FileApperanceBloc, FileApperanceState>(
           // buildWhen: (previous, current) => previous.status != current.status,
           builder: (context, state) {
-        return ListTile(
-          leading: state.status.isSyncing
-              ? CircularProgressIndicator(
-                  value: state.progress,
-                )
-              : const Icon(Icons.file_copy),
-          title: Text(basename(state.fileCloud.file.path)),
-          onTap: state.status.isSyncing
+        return Dismissible(
+          key: UniqueKey(),
+          onDismissed: state.status.isSyncing
               ? null
-              : () => Navigator.of(context).push(EditFilePage.route(context,
-                  initialFile: state.fileCloud.file)),
-          trailing: state.status == FileApperanceStatus.conflict
-              ? const Icon(Icons.error)
-              : null,
+              : (_) => context
+                  .read<FilesOverviewBloc>()
+                  .add(FilesOverviewTodoDeleted(
+                    state.fileCloud,
+                  )),
+          child: ListTile(
+            leading: state.status.isSyncing
+                ? IconCircularProgressIndicator(
+                    progress: state.progress,
+                    child: state.status.isDownloading
+                        ? const Icon(Icons.downloading)
+                        : const Icon(Icons.upload),
+                  )
+                : const Icon(Icons.file_copy),
+            title: Text(basename(state.fileCloud.file.path)),
+            onTap: state.status.isSyncing
+                ? null
+                : () => Navigator.of(context).push(EditFilePage.route(context,
+                    initialFile: state.fileCloud.file)),
+            trailing: state.status == FileApperanceStatus.conflict
+                ? const Icon(Icons.error)
+                : null,
+          ),
         );
       }),
     );

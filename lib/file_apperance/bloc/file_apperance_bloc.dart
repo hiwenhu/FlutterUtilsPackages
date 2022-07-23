@@ -26,6 +26,8 @@ class FileApperanceBloc extends Bloc<FileApperanceEvent, FileApperanceState> {
 
   FutureOr<void> _onFileDownloading(
       FileDownloadingEvent event, Emitter<FileApperanceState> emit) async {
+    if (!fileCloudRepository.canUseCloud) return;
+
     emit(state.copyWith(status: FileApperanceStatus.downloading));
     try {
       // var fileCloud = await fileCloudRepository.download(
@@ -58,6 +60,7 @@ class FileApperanceBloc extends Bloc<FileApperanceEvent, FileApperanceState> {
 
   FutureOr<void> _onFileUploading(
       FileUploadingEvent event, Emitter<FileApperanceState> emit) async {
+    if (!fileCloudRepository.canUseCloud) return;
     emit(state.copyWith(status: FileApperanceStatus.uploading));
     try {
       var fileCloud = await fileCloudRepository.upload(state.fileCloud);
