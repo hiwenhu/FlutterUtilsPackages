@@ -148,7 +148,7 @@ class TimeOfDayWithSec {
     final String minuteLabel = _addLeadingZeroIfNeeded(minute);
     final String secondLabel = _addLeadingZeroIfNeeded(second);
 
-    return '$TimeOfDayWithSec($hourLabel:$minuteLabel:$secondLabel)';
+    return '$hourLabel:$minuteLabel:$secondLabel';
   }
 }
 

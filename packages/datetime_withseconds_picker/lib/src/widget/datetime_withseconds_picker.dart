@@ -2542,7 +2542,7 @@ class _TimePickerWithSecDialogState extends State<TimePickerWithSecDialog>
     _announceToAccessibility(
       context,
       localizations.formatTimeOfDay(widget.initialTime.toTimeOfDay(),
-          alwaysUse24HourFormat: media.alwaysUse24HourFormat),
+          alwaysUse24HourFormat: media.alwaysUse24HourFormat),//TODO add second
     );
     _announcedInitialTime.value = true;
   }
