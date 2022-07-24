@@ -1,4 +1,5 @@
 import 'package:authentication_repository/authentication_repository.dart';
+import 'package:datetime_withseconds_picker/datetime_withseconds_picker.dart';
 import 'package:file_cloud_repository/file_cloud_repository.dart';
 import 'package:flutter/material.dart';
 import 'package:flutter_bloc/flutter_bloc.dart';
@@ -6,6 +7,7 @@ import 'package:testimage/app/bloc/app_bloc.dart';
 import 'package:testimage/cloud/switch/cubit/cloud_switch_cubit.dart';
 import 'package:testimage/files_overview/bloc/files_overview_bloc.dart';
 import 'package:testimage/files_overview/view/files_overview_page.dart';
+import 'package:flutter_localizations/flutter_localizations.dart';
 
 class App<FC extends FileCloudRepository> extends StatelessWidget {
   const App({
@@ -72,23 +74,44 @@ class _AppViewState extends State<AppView> {
       //   state: context.select((AppBloc bloc) => bloc.state.status),
       //   onGeneratePages: onGenerateAppViewPages,
       // ),
+      localizationsDelegates: const [
+        GlobalMaterialLocalizations.delegate,
+        GlobalWidgetsLocalizations.delegate,
+        GlobalCupertinoLocalizations.delegate,
+      ],
+      supportedLocales: const [
+        Locale('en', ''), // English, no country code
+      ],
       home: const FilesOverviewPage(),
-      // Scaffold(
-      //   appBar: AppBar(
-      //     title: const Text('Test Cloud Sync'),
-      //   ),
-      //   body: SafeArea(
-      //     child: Align(
-      //       alignment: Alignment.center,
-      //       child: Column(
-      //         children: const [
-      //           CloudWrapper(child: Text('data')),
-      //           CloudSettingPage(),
-      //         ],
-      //       ),
-      //     ),
-      //   ),
-      // ),
+          //const TestShowTimePicker(),
+    );
+  }
+}
+
+class TestShowTimePicker extends StatelessWidget {
+  const TestShowTimePicker({Key? key}) : super(key: key);
+
+  @override
+  Widget build(BuildContext context) {
+    return Scaffold(
+      appBar: AppBar(
+        title: const Text('Test Cloud Sync'),
+      ),
+      body: SafeArea(
+        child: Align(
+          alignment: Alignment.center,
+          child: ElevatedButton(
+            child: const Text('show time picker with seconds'),
+            onPressed: () => showTimeWithSecPicker(
+                    context: context,
+                    initialTime: TimeOfDayWithSec.now(),
+                    secondLabelText: 'Second')
+                .then(
+              (value) => print(value.toString()),
+            ),
+          ),
+        ),
+      ),
     );
   }
 }
