@@ -264,6 +264,7 @@ class FileCloudRepository<CA extends CloudApi> {
     }
 
     var result = await cloudApi.downloadStream(fileCloud.cloudFileName);
+    assert(result.length >= 3);
     Stream<List<int>>? stream = result[0];
     int length = int.tryParse(result[1].toString()) ?? 1;
     String? cloudVersion = result[2];
