@@ -21,6 +21,7 @@ class FileCloudRepository<CA extends CloudApi> {
     required this.localFileRoot,
     required this.cloudApi,
     required this.useCloud,
+    String? cloudFileRoot,
   }) {
     // refresh();
     // Timer.periodic(const Duration(seconds: 5), (_) {
@@ -45,6 +46,7 @@ class FileCloudRepository<CA extends CloudApi> {
     //     });
     //   });
     // });
+    this.cloudFileRoot = cloudFileRoot ?? basename(localFileRoot.path);
   }
   final CA cloudApi;
   final _filesStreamController =
@@ -56,6 +58,7 @@ class FileCloudRepository<CA extends CloudApi> {
   };
 
   final Directory localFileRoot;
+  late final String cloudFileRoot;
 
   bool useCloud;
 
@@ -92,6 +95,7 @@ class FileCloudRepository<CA extends CloudApi> {
             version: getFileVersion(
               sp.getString(localFileVersionKey(data)),
             ),
+            cloudVersion: -1,
           ));
         }
       }
@@ -131,7 +135,7 @@ class FileCloudRepository<CA extends CloudApi> {
   }
 
   Future<void> loadFromCloud() async {
-    var cloudfiles = await cloudApi.listFile();
+    var cloudfiles = await cloudApi.listFile(cloudFileRoot);
     onCloudFiles(cloudfiles);
   }
 
@@ -147,19 +151,27 @@ class FileCloudRepository<CA extends CloudApi> {
           // }
           localFiles[index] = localFiles[index].copyWith(
             // version: cloudVersion, 需要同步，現在不能更新version
-            cloudFileName: cloudFile.name ?? '',
+            cloudFileId: cloudFile.id ?? '',
             cloudVersion: cloudVersion,
           );
         } else if (cloudFile.name != null) {
           localFiles.add(FileCloud(
             file: File('${localFileRoot.path}/${cloudFile.name}'),
             // version: cloudVersion, 需要同步，現在不能更新version
-            cloudFileName: cloudFile.name ?? '',
+            cloudFileId: cloudFile.id ?? '',
             cloudVersion: cloudVersion,
           ));
         }
       }
     }
+
+    for (var i = 0; i < localFiles.length; i++) {
+      var localFile = localFiles[i];
+      if (localFile.cloudVersion == -1) {
+        localFiles[i] = localFiles[i].copyWith(cloudVersion: 0); //云上没有这些文件
+      }
+    }
+
     _filesStreamController.add(localFiles);
   }
 
@@ -216,6 +228,7 @@ class FileCloudRepository<CA extends CloudApi> {
 
     if (index >= 0) {
       var sp = await SharedPreferences.getInstance();
+      var cloudFileId = localFiles[index].cloudFileId;
       var localFile = localFiles[index].file;
       sp.remove(localFileVersionKey(localFile));
       localFile.delete();
@@ -226,33 +239,33 @@ class FileCloudRepository<CA extends CloudApi> {
       needSyncFiles[FileSyncOper.delete]?.add(FileCloud(file: file));
       needSyncFiles[FileSyncOper.save]
           ?.removeWhere((element) => element.file == file);
-    }
-    if (useCloud) {
-      cloudApi.deleteFile(file);
+      if (useCloud) {
+        cloudApi.deleteFile(cloudFileRoot, cloudFileId);
+      }
     }
   }
 
-  Future<FileCloud> download(FileCloud fileCloud) async {
-    if (!useCloud) {
-      throw FileCloudOff();
-    }
-    var cloudVersion = await cloudApi.download(
-      fileCloud.file,
-      fileCloud.cloudFileName,
-    );
-    var fc = fileCloud.copyWith(
-      version: getFileVersion(cloudVersion),
-    );
+  // Future<FileCloud> download(FileCloud fileCloud) async {
+  //   if (!useCloud) {
+  //     throw FileCloudOff();
+  //   }
+  //   var cloudVersion = await cloudApi.download(
+  //     fileCloud.file,
+  //     fileCloud.cloudFileId,
+  //   );
+  //   var fc = fileCloud.copyWith(
+  //     version: getFileVersion(cloudVersion),
+  //   );
 
-    final index =
-        localFiles.indexWhere((t) => t.file.path == fileCloud.file.path);
-    if (index >= 0) {
-      localFiles[index] = fc;
-    } else {
-      localFiles.add(fc);
-    }
-    return fc;
-  }
+  //   final index =
+  //       localFiles.indexWhere((t) => t.file.path == fileCloud.file.path);
+  //   if (index >= 0) {
+  //     localFiles[index] = fc;
+  //   } else {
+  //     localFiles.add(fc);
+  //   }
+  //   return fc;
+  // }
 
   Stream<dynamic> downloadStream(FileCloud fileCloud) async* {
     if (!useCloud) {
@@ -263,7 +276,8 @@ class FileCloudRepository<CA extends CloudApi> {
       yield null;
     }
 
-    var result = await cloudApi.downloadStream(fileCloud.cloudFileName);
+    var result =
+        await cloudApi.downloadStream(cloudFileRoot, fileCloud.cloudFileId);
     assert(result.length >= 3);
     Stream<List<int>>? stream = result[0];
     int length = int.tryParse(result[1].toString()) ?? 1;
@@ -307,12 +321,18 @@ class FileCloudRepository<CA extends CloudApi> {
       return null;
     }
 
-    int cloudVersion = getFileVersion(
-        await cloudApi.upload(fileCloud.file, fileCloud.cloudFileName));
+    var cloudFileInfo = await cloudApi.upload(
+        cloudFileRoot, fileCloud.file, fileCloud.cloudFileId);
+    if (cloudFileInfo.isEmpty) {
+      return null;
+    }
+    int cloudVersion = getFileVersion(cloudFileInfo[1]);
     var sp = await SharedPreferences.getInstance();
     sp.setString(localFileVersionKey(fileCloud.file), cloudVersion.toString());
-    var fc =
-        fileCloud.copyWith(version: cloudVersion, cloudVersion: cloudVersion);
+    var fc = fileCloud.copyWith(
+        version: cloudVersion,
+        cloudFileId: cloudFileInfo[0],
+        cloudVersion: cloudVersion);
     final index =
         localFiles.indexWhere((t) => t.file.path == fileCloud.file.path);
     if (index >= 0) {
@@ -321,5 +341,22 @@ class FileCloudRepository<CA extends CloudApi> {
       localFiles.add(fc);
     }
     return fc;
+  }
+
+  Future<FileCloud?> localFileReCloud(FileCloud fileCloud) async {
+    final index =
+        localFiles.indexWhere((t) => t.file.path == fileCloud.file.path);
+    if (index >= 0) {
+      List<String?> result = await cloudApi.getFileMetadata(
+          cloudFileRoot, basename(fileCloud.file.path));
+      if (result.length >= 2) {
+        localFiles[index] = localFiles[index].copyWith(
+          cloudFileId: result[0],
+          cloudVersion: getFileVersion(result[1]),
+        );
+        return localFiles[index];
+      }
+    }
+    return null;
   }
 }

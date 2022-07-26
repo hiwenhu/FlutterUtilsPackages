@@ -8,3 +8,5 @@ abstract class FileApperanceEvent extends Equatable {
 class FileDownloadingEvent extends FileApperanceEvent {}
 
 class FileUploadingEvent extends FileApperanceEvent {}
+
+class FileApperanceGetCloudEvent extends FileApperanceEvent {}

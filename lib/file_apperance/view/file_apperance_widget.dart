@@ -60,9 +60,38 @@ class FileApperanceListTile extends StatelessWidget {
                         ? const Icon(Icons.downloading)
                         : const Icon(Icons.upload),
                   )
-                : const Icon(Icons.file_copy),
+                : state.fileCloud.needDownloading
+                    ? IconButton(
+                        onPressed: () {
+                          context
+                              .read<FileApperanceBloc>()
+                              .add(FileDownloadingEvent());
+                        },
+                        icon: const Icon(Icons.download),
+                      )
+                    : state.fileCloud.needUploading
+                        ? IconButton(
+                            onPressed: () {
+                              context
+                                  .read<FileApperanceBloc>()
+                                  .add(FileUploadingEvent());
+                            },
+                            icon: const Icon(Icons.upload),
+                          )
+                        : state.fileCloud.needGetFromCloud
+                            ? IconButton(
+                                onPressed: () {
+                                  context
+                                      .read<FileApperanceBloc>()
+                                      .add(FileApperanceGetCloudEvent());
+                                },
+                                icon: const Icon(Icons.cloud),
+                              )
+                            : const Icon(Icons.file_copy),
             title: Text(basename(state.fileCloud.file.path)),
-            onTap: state.status.isSyncing
+            subtitle: Text(
+                'vertsion${state.fileCloud.version.toString()}/cloudVersion:${state.fileCloud.cloudVersion.toString()}'),
+            onTap: state.status.isSyncing || state.status.inFailure
                 ? null
                 : () => Navigator.of(context).push(EditFilePage.route(context,
                     initialFile: state.fileCloud.file)),

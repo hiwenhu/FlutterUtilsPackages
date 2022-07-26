@@ -4,6 +4,7 @@ import 'dart:io';
 import 'package:bloc/bloc.dart';
 import 'package:device_info_plus/device_info_plus.dart';
 import 'package:equatable/equatable.dart';
+import 'package:exception_extension/exception_extension.dart';
 import 'package:file_cloud_repository/file_cloud_repository.dart';
 
 part 'edit_file_event.dart';
@@ -17,11 +18,17 @@ class EditFileBloc extends Bloc<EditFileEvent, EditFileState> {
         super(
           EditFileState(
             initialFile: initialFile,
-            content: initialFile?.readAsStringSync() ?? '',
+            status: initialFile != null
+                ? EditFileStatus.loading
+                : EditFileStatus.initial,
           ),
         ) {
+    on<EditFileInited>(_onEditFileInited);
     on<EditFileSubmitted>(_onSubmitted);
     on<EditFileContentChanged>(_onContentChanged);
+    if (initialFile != null) {
+      add(const EditFileInited());
+    }
   }
 
   final FileCloudRepository _fileCloudRepository;
@@ -50,7 +57,7 @@ class EditFileBloc extends Bloc<EditFileEvent, EditFileState> {
     } catch (e) {
       emit(state.copyWith(
         status: EditFileStatus.failure,
-        errorMessage: e.toString(),
+        errorMessage: e.exceptionMsg,
       ));
     }
   }
@@ -59,8 +66,25 @@ class EditFileBloc extends Bloc<EditFileEvent, EditFileState> {
       EditFileContentChanged event, Emitter<EditFileState> emit) {
     emit(
       state.copyWith(
+        status: event.status,
         content: event.content,
       ),
     );
+  }
+
+  FutureOr<void> _onEditFileInited(
+      EditFileInited event, Emitter<EditFileState> emit) async {
+    if (state.initialFile != null) {
+      try {
+        var content = await state.initialFile!.readAsString();
+        emit(state.copyWith(
+          content: content,
+          status: EditFileStatus.initial,
+        ));
+      } catch (e) {
+        emit(state.copyWith(
+            status: EditFileStatus.failure, errorMessage: e.exceptionMsg));
+      }
+    }
   }
 }

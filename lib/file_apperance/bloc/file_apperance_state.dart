@@ -17,6 +17,7 @@ extension FileApperanceStatusX on FileApperanceStatus {
 
   bool get isDownloading => FileApperanceStatus.downloading == this;
   bool get isUploading => FileApperanceStatus.uploading == this;
+  bool get inFailure => FileApperanceStatus.failure == this;
 }
 
 class FileApperanceState extends Equatable {

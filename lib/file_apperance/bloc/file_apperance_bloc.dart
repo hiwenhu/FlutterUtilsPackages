@@ -1,9 +1,13 @@
 import 'dart:async';
+import 'dart:io';
 
 import 'package:bloc/bloc.dart';
 import 'package:equatable/equatable.dart';
 import 'package:file_cloud_repository/file_cloud_repository.dart';
 import 'package:file_cloud_repository/models/models.dart';
+import 'package:flutter/services.dart';
+import 'package:googleapis/abusiveexperiencereport/v1.dart';
+import 'package:exception_extension/exception_extension.dart';
 
 part 'file_apperance_state.dart';
 part 'file_apperance_event.dart';
@@ -15,6 +19,11 @@ class FileApperanceBloc extends Bloc<FileApperanceEvent, FileApperanceState> {
         )) {
     on<FileDownloadingEvent>(_onFileDownloading);
     on<FileUploadingEvent>(_onFileUploading);
+    on<FileApperanceGetCloudEvent>(_onFileGetCloud);
+    // interactWithCloud(fileCloud);
+  }
+
+  void interactWithCloud(FileCloud fileCloud) {
     if (fileCloud.needDownloading) {
       add(FileDownloadingEvent());
     } else if (fileCloud.needUploading) {
@@ -71,7 +80,25 @@ class FileApperanceBloc extends Bloc<FileApperanceEvent, FileApperanceState> {
     } catch (e) {
       emit(state.copyWith(
         status: FileApperanceStatus.failure,
-        errorMessage: e.toString(),
+        errorMessage: e.exceptionMsg,
+      ));
+    }
+  }
+
+  FutureOr<void> _onFileGetCloud(FileApperanceGetCloudEvent event,
+      Emitter<FileApperanceState> emit) async {
+    emit(state.copyWith(status: FileApperanceStatus.conflict));
+    try {
+      var fileCloud =
+          await fileCloudRepository.localFileReCloud(state.fileCloud);
+      emit(state.copyWith(
+        status: FileApperanceStatus.success,
+        fileCloud: fileCloud,
+      ));
+    } catch (e) {
+      emit(state.copyWith(
+        status: FileApperanceStatus.failure,
+        errorMessage: e.exceptionMsg,
       ));
     }
   }

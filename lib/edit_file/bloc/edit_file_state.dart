@@ -23,7 +23,10 @@ class EditFileState extends Equatable {
   bool get isNewFile => initialFile == null;
 
   EditFileState copyWith(
-      {EditFileStatus? status, File? initialFile, String? content, String? errorMessage}) {
+      {EditFileStatus? status,
+      File? initialFile,
+      String? content,
+      String? errorMessage}) {
     return EditFileState(
       status: status ?? this.status,
       initialFile: initialFile ?? this.initialFile,

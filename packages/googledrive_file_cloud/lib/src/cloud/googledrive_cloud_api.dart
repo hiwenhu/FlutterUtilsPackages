@@ -24,36 +24,46 @@ class GoogleDriveCloudApi extends CloudApi {
   // }
 
   @override
-  Future deleteFile(File file) async {
+  Future deleteFile(String folderName, String cloudFileId) async {
     // await getAccount();
     if (account != null) {
+      final folder = await getFolder(folderName);
+      if (folder.id == null) {
+        return;
+      }
       final authHeaders = await account!.authHeaders;
       final authenticateClient = GoogleAuthClient(authHeaders);
       final driveApi = drive.DriveApi(authenticateClient);
-      final fileName = basename(file.path);
-      var fileList = await driveApi.files.list(
-          q: "name = '$fileName' and 'appDataFolder' in parents and trashed = false",
-          spaces: 'appDataFolder',
-          $fields: 'files(id)');
+      // final fileName = basename(file.path);
+      // var fileList = await driveApi.files.list(
+      //     q: "name = '$fileName' and '${folder.id}' in parents and mimeType != 'application/vnd.google-apps.folder' and trashed = false",
+      //     spaces: 'appDataFolder',
+      //     $fields: 'files(id)');
 
-      var fileId =
-          fileList.files?.isNotEmpty == true ? fileList.files!.first.id : null;
-      if (fileId != null) {
-        driveApi.files.delete(fileId);
-      }
+      // var fileId =
+      //     fileList.files?.isNotEmpty == true ? fileList.files!.first.id : null;
+      // if (fileId != null) {
+      driveApi.files.delete(cloudFileId);
+      // }
     }
   }
 
   @override
-  Future<List<drive.File>> listFile() async {
+  Future<List<drive.File>> listFile(
+    String folderName,
+  ) async {
     // await getAccount();
     if (account != null) {
+      final folder = await getFolder(folderName);
+      if (folder.id == null) {
+        return const [];
+      }
       final authHeaders = await account!.authHeaders;
       final authenticateClient = GoogleAuthClient(authHeaders);
       final driveApi = drive.DriveApi(authenticateClient);
 
       var fileList = await driveApi.files.list(
-          q: "'appDataFolder' in parents and trashed = false",
+          q: "'${folder.id}' in parents and trashed = false and mimeType != 'application/vnd.google-apps.folder'",
           spaces: 'appDataFolder',
           $fields: 'files(id,name,version)');
 
@@ -62,180 +72,200 @@ class GoogleDriveCloudApi extends CloudApi {
       return fileList.files ??
           //         ?.map((e) => File('${directory.path}/${e.name}'))
           //         .toList() ??
-          [];
+          const [];
     }
-    return [];
+    return const [];
   }
 
+  // @override
+  // Future<drive.File?> saveFile(File file) async {
+  //   // await getAccount();
+  //   if (account != null) {
+  //     final authHeaders = await account!.authHeaders;
+  //     final authenticateClient = GoogleAuthClient(authHeaders);
+  //     final driveApi = drive.DriveApi(authenticateClient);
+  //     var driveFile = drive.File();
+  //     driveFile.name = basename(file.path);
+  //     var fileList = await driveApi.files.list(
+  //         q: "name='${driveFile.name}' and 'appDataFolder' in parents and trashed = false",
+  //         spaces: 'appDataFolder',
+  //         $fields: 'files(id)');
+  //     drive.Media? media;
+  //     if (Platform.isAndroid) {
+  //       DeviceInfoPlugin deviceInfo = DeviceInfoPlugin();
+  //       AndroidDeviceInfo androidInfo = await deviceInfo.androidInfo;
+  //       if (androidInfo.isPhysicalDevice == false) {
+  //         final Stream<List<int>> mediaStream =
+  //             Future.value([105, 106]).asStream().asBroadcastStream();
+  //         media = drive.Media(mediaStream, 2);
+  //       }
+  //     }
+  //     media ??= drive.Media(file.openRead(), await file.length());
+  //     drive.File result;
+  //     if (fileList.files?.isNotEmpty == true &&
+  //         fileList.files!.first.id != null) {
+  //       result = await driveApi.files
+  //           .update(driveFile, fileList.files!.first.id!, uploadMedia: media);
+  //     } else {
+  //       //新建文件时才能用这句，否则会报错，移动文件到其他目录使用update方法中的参数addParents removeParents
+  //       driveFile.parents = ['appDataFolder'];
+
+  //       result = await driveApi.files.create(driveFile,
+  //           uploadMedia: media,
+  //           uploadOptions: drive.UploadOptions.defaultOptions);
+  //     }
+  //     log("Upload result: $result");
+  //     return result;
+  //   }
+  //   return null;
+  // }
+
+  // @override
+  // Future<String?> download(
+  //   File file,
+  //   String cloudFileName,
+  // ) async {
+  //   // await getAccount();
+  //   String? cloudVersion;
+  //   if (account != null) {
+  //     final authHeaders = await account!.authHeaders;
+  //     final authenticateClient = GoogleAuthClient(authHeaders);
+  //     final driveApi = drive.DriveApi(authenticateClient);
+  //     var fileList = await driveApi.files.list(
+  //         q: "name='$cloudFileName' and 'appDataFolder' in parents and trashed = false",
+  //         spaces: 'appDataFolder',
+  //         $fields: 'files(id, version)');
+
+  //     if (fileList.files?.isNotEmpty != true ||
+  //         fileList.files!.first.id == null) {
+  //       throw FileCloudNotFoundException();
+  //     }
+
+  //     var result = await driveApi.files.get(
+  //       fileList.files!.first.id!,
+  //       downloadOptions: drive.DownloadOptions.fullMedia,
+  //       // $fields: 'files(id, version)',
+  //     );
+  //     drive.Media cloudFile = result as drive.Media;
+  //     //  final directory = await getExternalStorageDirectory();
+  //     //  print(directory.path);
+  //     //  final saveFile = File('${directory.path}/${new DateTime.now().millisecondsSinceEpoch}$fName');
+  //     try {
+  //       List<int> dataStore = [];
+  //       await for (final data in cloudFile.stream) {
+  //         dataStore.insertAll(dataStore.length, data);
+  //       }
+  //       log("Task Done");
+  //       await file.writeAsBytes(dataStore);
+  //       log("File saved at ${file.path}");
+  //     } catch (e, st) {
+  //       log(e.toString(), stackTrace: st);
+  //       rethrow;
+  //     }
+
+  //     // cloudFile.stream.listen((data) {
+  //     //   print("DataReceived: ${data.length}");
+  //     //   dataStore.insertAll(dataStore.length, data);
+  //     // }, onDone: () {
+  //     //   print("Task Done");
+  //     //   file.writeAsBytes(dataStore);
+  //     //   if (onDone != null) {
+  //     //     onDone(fileList.files!.first.version);
+  //     //   }
+  //     //   print("File saved at ${file.path}");
+  //     // }, onError: (error) {
+  //     //   print("Some Error");
+  //     // });
+  //     cloudVersion = fileList.files!.first.version;
+  //   }
+  //   return cloudVersion;
+  // }
+
   @override
-  Future<drive.File?> saveFile(File file) async {
+  Future<List<String?>> upload(
+      String folderName, File file, String cloudFileId) async {
     // await getAccount();
     if (account != null) {
-      final authHeaders = await account!.authHeaders;
-      final authenticateClient = GoogleAuthClient(authHeaders);
-      final driveApi = drive.DriveApi(authenticateClient);
-      var driveFile = drive.File();
-      driveFile.name = basename(file.path);
-      var fileList = await driveApi.files.list(
-          q: "name='${driveFile.name}' and 'appDataFolder' in parents and trashed = false",
-          spaces: 'appDataFolder',
-          $fields: 'files(id)');
-      drive.Media? media;
-      if (Platform.isAndroid) {
-        DeviceInfoPlugin deviceInfo = DeviceInfoPlugin();
-        AndroidDeviceInfo androidInfo = await deviceInfo.androidInfo;
-        if (androidInfo.isPhysicalDevice == false) {
-          final Stream<List<int>> mediaStream =
-              Future.value([105, 106]).asStream().asBroadcastStream();
-          media = drive.Media(mediaStream, 2);
+      final folder = await getFolder(folderName);
+      if (folder.id != null) {
+        final authHeaders = await account!.authHeaders;
+        final authenticateClient = GoogleAuthClient(authHeaders);
+        final driveApi = drive.DriveApi(authenticateClient);
+        var driveFile = drive.File();
+        driveFile.name = basename(file.path);
+        // var fileList = await driveApi.files.list(
+        //     q: "name='${driveFile.name}' and '${folder.id}' in parents and mimeType != 'application/vnd.google-apps.folder' and trashed = false",
+        //     spaces: 'appDataFolder',
+        //     $fields: 'files(id)');
+
+        drive.Media? media;
+        if (Platform.isAndroid) {
+          DeviceInfoPlugin deviceInfo = DeviceInfoPlugin();
+          AndroidDeviceInfo androidInfo = await deviceInfo.androidInfo;
+          if (androidInfo.isPhysicalDevice == false) {
+            final Stream<List<int>> mediaStream =
+                Future.value([105, 106]).asStream().asBroadcastStream();
+            media = drive.Media(mediaStream, 2);
+          }
         }
-      }
-      media ??= drive.Media(file.openRead(), await file.length());
-      drive.File result;
-      if (fileList.files?.isNotEmpty == true &&
-          fileList.files!.first.id != null) {
-        result = await driveApi.files
-            .update(driveFile, fileList.files!.first.id!, uploadMedia: media);
-      } else {
-        //新建文件时才能用这句，否则会报错，移动文件到其他目录使用update方法中的参数addParents removeParents
-        driveFile.parents = ['appDataFolder'];
+        media ??= drive.Media(file.openRead(), await file.length());
+        drive.File result;
+        drive.File? cloudFileMetadata;
+        if (cloudFileId.isNotEmpty) {
+          cloudFileMetadata = await driveApi.files
+              .get(cloudFileId, $fields: "id") as drive.File;
+        }
 
-        result = await driveApi.files.create(driveFile, uploadMedia: media);
+        if (cloudFileMetadata != null && cloudFileMetadata.id != null) {
+          result = await driveApi.files.update(driveFile, cloudFileMetadata.id!,
+              uploadMedia: media, $fields: 'id');
+        } else {
+          //新建文件时才能用这句，否则会报错，移动文件到其他目录使用update方法中的参数addParents removeParents
+          driveFile.parents = ['${folder.id}'];
+          result = await driveApi.files
+              .create(driveFile, uploadMedia: media, $fields: 'id');
+        }
+        if (result.id != null) {
+          result = await driveApi.files.get(result.id!, $fields: "version")
+              as drive.File;
+        }
+        log("Upload result: $result");
+        return [result.id, result.version];
       }
-      log("Upload result: $result");
-      return result;
     }
-    return null;
+    return const [];
   }
 
   @override
-  Future<String?> download(
-    File file,
-    String cloudFileName,
-  ) async {
-    // await getAccount();
-    String? cloudVersion;
+  Future<List> downloadStream(String folderName, String cloudFileId) async {
     if (account != null) {
+      final folder = await getFolder(folderName);
+      if (folder.id == null) {
+        return [null, 0, null];
+      }
+
       final authHeaders = await account!.authHeaders;
       final authenticateClient = GoogleAuthClient(authHeaders);
       final driveApi = drive.DriveApi(authenticateClient);
-      var fileList = await driveApi.files.list(
-          q: "name='$cloudFileName' and 'appDataFolder' in parents and trashed = false",
-          spaces: 'appDataFolder',
-          $fields: 'files(id, version)');
+      // var fileList = await driveApi.files.list(
+      //     q: "name='$cloudFileName' and '${folder.id}' in parents and mimeType != 'application/vnd.google-apps.folder' and trashed = false",
+      //     spaces: 'appDataFolder',
+      //     $fields: 'files(id, version)');
+      // if (fileList.files?.isNotEmpty != true ||
+      //     fileList.files!.first.id == null) {
+      //   throw FileCloudNotFoundException();
+      // }
 
-      if (fileList.files?.isNotEmpty != true ||
-          fileList.files!.first.id == null) {
-        throw FileCloudNotFoundException();
-      }
+      // var result = await driveApi.files.get(
+      //   fileList.files!.first.id!,
+      //   downloadOptions: drive.DownloadOptions.fullMedia,
+      //   // $fields: 'files(id, version)',
+      // );
 
+      var cloudFileMetadata = await driveApi.files
+          .get(cloudFileId, $fields: "version") as drive.File;
       var result = await driveApi.files.get(
-        fileList.files!.first.id!,
-        downloadOptions: drive.DownloadOptions.fullMedia,
-        // $fields: 'files(id, version)',
-      );
-      drive.Media cloudFile = result as drive.Media;
-      //  final directory = await getExternalStorageDirectory();
-      //  print(directory.path);
-      //  final saveFile = File('${directory.path}/${new DateTime.now().millisecondsSinceEpoch}$fName');
-      try {
-        List<int> dataStore = [];
-        await for (final data in cloudFile.stream) {
-          dataStore.insertAll(dataStore.length, data);
-        }
-        log("Task Done");
-        await file.writeAsBytes(dataStore);
-        log("File saved at ${file.path}");
-      } catch (e, st) {
-        log(e.toString(), stackTrace: st);
-        rethrow;
-      }
-
-      // cloudFile.stream.listen((data) {
-      //   print("DataReceived: ${data.length}");
-      //   dataStore.insertAll(dataStore.length, data);
-      // }, onDone: () {
-      //   print("Task Done");
-      //   file.writeAsBytes(dataStore);
-      //   if (onDone != null) {
-      //     onDone(fileList.files!.first.version);
-      //   }
-      //   print("File saved at ${file.path}");
-      // }, onError: (error) {
-      //   print("Some Error");
-      // });
-      cloudVersion = fileList.files!.first.version;
-    }
-    return cloudVersion;
-  }
-
-  @override
-  Future<String?> upload(File file, String cloudFileName) async {
-    // await getAccount();
-    if (account != null) {
-      final authHeaders = await account!.authHeaders;
-      final authenticateClient = GoogleAuthClient(authHeaders);
-      final driveApi = drive.DriveApi(authenticateClient);
-      var driveFile = drive.File();
-      driveFile.name = basename(file.path);
-      var fileList = await driveApi.files.list(
-          q: "name='$cloudFileName' and 'appDataFolder' in parents and trashed = false",
-          spaces: 'appDataFolder',
-          $fields: 'files(id)');
-      drive.Media? media;
-      if (Platform.isAndroid) {
-        DeviceInfoPlugin deviceInfo = DeviceInfoPlugin();
-        AndroidDeviceInfo androidInfo = await deviceInfo.androidInfo;
-        if (androidInfo.isPhysicalDevice == false) {
-          final Stream<List<int>> mediaStream =
-              Future.value([105, 106]).asStream().asBroadcastStream();
-          media = drive.Media(mediaStream, 2);
-        }
-      }
-      media ??= drive.Media(file.openRead(), await file.length());
-      drive.File result;
-      if (fileList.files?.isNotEmpty == true &&
-          fileList.files!.first.id != null) {
-        result = await driveApi.files.update(
-            driveFile, fileList.files!.first.id!,
-            uploadMedia: media, $fields: 'id');
-      } else {
-        //新建文件时才能用这句，否则会报错，移动文件到其他目录使用update方法中的参数addParents removeParents
-        driveFile.parents = ['appDataFolder'];
-        result = await driveApi.files
-            .create(driveFile, uploadMedia: media, $fields: 'id');
-      }
-      String? cloudVersioni;
-      if (result.id != null) {
-        result = await driveApi.files.get(
-          result.id!,
-          $fields: "version"
-        ) as drive.File;
-      }
-      log("Upload result: $result");
-      return result.version;
-    }
-    return null;
-  }
-
-  @override
-  Future<List> downloadStream(String cloudFileName) async {
-    if (account != null) {
-      final authHeaders = await account!.authHeaders;
-      final authenticateClient = GoogleAuthClient(authHeaders);
-      final driveApi = drive.DriveApi(authenticateClient);
-      var fileList = await driveApi.files.list(
-          q: "name='$cloudFileName' and 'appDataFolder' in parents and trashed = false",
-          spaces: 'appDataFolder',
-          $fields: 'files(id, version)');
-
-      if (fileList.files?.isNotEmpty != true ||
-          fileList.files!.first.id == null) {
-        throw FileCloudNotFoundException();
-      }
-
-      var result = await driveApi.files.get(
-        fileList.files!.first.id!,
+        cloudFileId,
         downloadOptions: drive.DownloadOptions.fullMedia,
         // $fields: 'files(id, version)',
       );
@@ -243,7 +273,7 @@ class GoogleDriveCloudApi extends CloudApi {
       return [
         cloudFile.stream,
         cloudFile.length,
-        fileList.files!.first.version
+        cloudFileMetadata.version,
       ];
       // var testData = [
       //   100,
@@ -269,5 +299,47 @@ class GoogleDriveCloudApi extends CloudApi {
   @override
   bool isAuth() {
     return googleSignIn.currentUser != null;
+  }
+
+  Future<drive.File> getFolder(String folderName) async {
+    final authHeaders = await account!.authHeaders;
+    final authenticateClient = GoogleAuthClient(authHeaders);
+    final driveApi = drive.DriveApi(authenticateClient);
+    var folderList = await driveApi.files.list(
+        q: "name='$folderName' and mimeType = 'application/vnd.google-apps.folder' and 'appDataFolder' in parents and trashed = false",
+        spaces: 'appDataFolder',
+        $fields: 'files(id)');
+    drive.File cloudFolder;
+    if (folderList.files?.isNotEmpty != true) {
+      var driveFolder = drive.File();
+      driveFolder.name = folderName;
+      driveFolder.parents = ['appDataFolder'];
+      driveFolder.mimeType = 'application/vnd.google-apps.folder';
+      cloudFolder = await driveApi.files.create(driveFolder, $fields: 'id');
+    } else {
+      cloudFolder = folderList.files!.first;
+    }
+    return cloudFolder;
+  }
+
+  @override
+  Future<List<String?>> getFileMetadata(
+      String folderName, String fileName) async {
+    if (account != null) {
+      final folder = await getFolder(folderName);
+      if (folder.id != null) {
+        final authHeaders = await account!.authHeaders;
+        final authenticateClient = GoogleAuthClient(authHeaders);
+        final driveApi = drive.DriveApi(authenticateClient);
+        var fileList = await driveApi.files.list(
+            q: "name='$fileName' and '${folder.id}' in parents and mimeType != 'application/vnd.google-apps.folder' and trashed = false",
+            spaces: 'appDataFolder',
+            $fields: 'files(id, version)');
+        if (fileList.files?.isNotEmpty == true) {
+          return [fileList.files!.first.id, fileList.files!.first.version];
+        }
+      }
+    }
+    return const [];
   }
 }

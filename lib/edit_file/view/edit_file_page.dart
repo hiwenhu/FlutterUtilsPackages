@@ -105,7 +105,9 @@ class FileEditField extends StatelessWidget {
       ),
       maxLength: 50,
       onChanged: (value) {
-        context.read<EditFileBloc>().add(EditFileContentChanged(value));
+        context
+            .read<EditFileBloc>()
+            .add(EditFileContentChanged(content: value));
       },
     );
   }
