@@ -21,13 +21,20 @@ class FileApperanceBloc extends Bloc<FileApperanceEvent, FileApperanceState> {
     on<FileUploadingEvent>(_onFileUploading);
     on<FileApperanceGetCloudEvent>(_onFileGetCloud);
     // interactWithCloud(fileCloud);
+    _init();
+  }
+
+  void _init() {
+    if (state.fileCloud.needGetFromCloud) {
+      add(const FileApperanceGetCloudEvent());
+    }
   }
 
   void interactWithCloud(FileCloud fileCloud) {
     if (fileCloud.needDownloading) {
-      add(FileDownloadingEvent());
+      add(const FileDownloadingEvent());
     } else if (fileCloud.needUploading) {
-      add(FileUploadingEvent());
+      add(const FileUploadingEvent());
     }
   }
 
@@ -87,7 +94,7 @@ class FileApperanceBloc extends Bloc<FileApperanceEvent, FileApperanceState> {
 
   FutureOr<void> _onFileGetCloud(FileApperanceGetCloudEvent event,
       Emitter<FileApperanceState> emit) async {
-    emit(state.copyWith(status: FileApperanceStatus.conflict));
+    emit(state.copyWith(status: FileApperanceStatus.reCloud));
     try {
       var fileCloud =
           await fileCloudRepository.localFileReCloud(state.fileCloud);

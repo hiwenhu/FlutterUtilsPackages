@@ -1,3 +1,5 @@
+import 'package:animated_icon/animate_icon.dart';
+import 'package:animated_icon/animate_icons.dart';
 import 'package:file_cloud_repository/file_cloud_repository.dart';
 import 'package:file_cloud_repository/models/models.dart';
 import 'package:flutter/material.dart';
@@ -53,41 +55,7 @@ class FileApperanceListTile extends StatelessWidget {
                     state.fileCloud,
                   )),
           child: ListTile(
-            leading: state.status.isSyncing
-                ? IconCircularProgressIndicator(
-                    progress: state.progress,
-                    child: state.status.isDownloading
-                        ? const Icon(Icons.downloading)
-                        : const Icon(Icons.upload),
-                  )
-                : state.fileCloud.needDownloading
-                    ? IconButton(
-                        onPressed: () {
-                          context
-                              .read<FileApperanceBloc>()
-                              .add(FileDownloadingEvent());
-                        },
-                        icon: const Icon(Icons.download),
-                      )
-                    : state.fileCloud.needUploading
-                        ? IconButton(
-                            onPressed: () {
-                              context
-                                  .read<FileApperanceBloc>()
-                                  .add(FileUploadingEvent());
-                            },
-                            icon: const Icon(Icons.upload),
-                          )
-                        : state.fileCloud.needGetFromCloud
-                            ? IconButton(
-                                onPressed: () {
-                                  context
-                                      .read<FileApperanceBloc>()
-                                      .add(FileApperanceGetCloudEvent());
-                                },
-                                icon: const Icon(Icons.cloud),
-                              )
-                            : const Icon(Icons.file_copy),
+            leading: const Icon(Icons.file_copy),
             title: Text(basename(state.fileCloud.file.path)),
             subtitle: Text(
                 'vertsion${state.fileCloud.version.toString()}/cloudVersion:${state.fileCloud.cloudVersion.toString()}'),
@@ -95,9 +63,45 @@ class FileApperanceListTile extends StatelessWidget {
                 ? null
                 : () => Navigator.of(context).push(EditFilePage.route(context,
                     initialFile: state.fileCloud.file)),
-            trailing: state.status == FileApperanceStatus.conflict
-                ? const Icon(Icons.error)
-                : null,
+            trailing: state.status.isSyncing
+                ? IconCircularProgressIndicator(
+                    progress: state.progress,
+                    child: state.status.isDownloading
+                        ? const Icon(Icons.downloading)
+                        : const Icon(Icons.upload),
+                  )
+                : state.status == FileApperanceStatus.reCloud
+                    ? const IconCircularProgressIndicator(
+                        child: Icon(Icons.cloud),
+                      )
+                    : state.fileCloud.needDownloading
+                        ? IconButton(
+                            onPressed: () {
+                              context
+                                  .read<FileApperanceBloc>()
+                                  .add(FileDownloadingEvent());
+                            },
+                            icon: const Icon(Icons.download),
+                          )
+                        : state.fileCloud.needUploading
+                            ? IconButton(
+                                onPressed: () {
+                                  context
+                                      .read<FileApperanceBloc>()
+                                      .add(FileUploadingEvent());
+                                },
+                                icon: const Icon(Icons.upload),
+                              )
+                            : state.fileCloud.needGetFromCloud
+                                ? IconButton(
+                                    onPressed: () {
+                                      context
+                                          .read<FileApperanceBloc>()
+                                          .add(FileApperanceGetCloudEvent());
+                                    },
+                                    icon: const Icon(Icons.cloud),
+                                  )
+                                : null,
           ),
         );
       }),

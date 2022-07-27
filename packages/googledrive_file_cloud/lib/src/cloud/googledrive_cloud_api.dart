@@ -1,7 +1,5 @@
 import 'package:cloud_api/cloud_api.dart';
 import 'package:device_info_plus/device_info_plus.dart';
-import 'package:file_cloud_repository/file_cloud_repository.dart';
-import 'package:flutter/cupertino.dart';
 import 'package:google_sign_in/google_sign_in.dart';
 import 'package:googleapis/drive/v3.dart' as drive;
 import 'package:path/path.dart';
@@ -13,7 +11,7 @@ class GoogleDriveCloudApi extends CloudApi {
   GoogleDriveCloudApi(this.googleSignIn);
   final GoogleSignIn googleSignIn;
   GoogleSignInAccount? get account => googleSignIn.currentUser;
-
+  String? startPageToken;
   // Future<GoogleSignInAccount?> getAccount() async {
   //   if (account == null) {
   //     final googleSignIn =
@@ -24,11 +22,12 @@ class GoogleDriveCloudApi extends CloudApi {
   // }
 
   @override
-  Future deleteFile(String folderName, String cloudFileId) async {
+  Future deleteFile(
+      String? folderId, String folderName, String cloudFileId) async {
     // await getAccount();
     if (account != null) {
-      final folder = await getFolder(folderName);
-      if (folder.id == null) {
+      folderId ??= (await getFolder(folderName)).id;
+      if (folderId == null) {
         return;
       }
       final authHeaders = await account!.authHeaders;
@@ -50,12 +49,13 @@ class GoogleDriveCloudApi extends CloudApi {
 
   @override
   Future<List<drive.File>> listFile(
+    String? folderId,
     String folderName,
   ) async {
     // await getAccount();
     if (account != null) {
-      final folder = await getFolder(folderName);
-      if (folder.id == null) {
+      folderId ??= (await getFolder(folderName)).id;
+      if (folderId == null) {
         return const [];
       }
       final authHeaders = await account!.authHeaders;
@@ -63,7 +63,7 @@ class GoogleDriveCloudApi extends CloudApi {
       final driveApi = drive.DriveApi(authenticateClient);
 
       var fileList = await driveApi.files.list(
-          q: "'${folder.id}' in parents and trashed = false and mimeType != 'application/vnd.google-apps.folder'",
+          q: "'$folderId' in parents and trashed = false and mimeType != 'application/vnd.google-apps.folder'",
           spaces: 'appDataFolder',
           $fields: 'files(id,name,version)');
 
@@ -182,12 +182,12 @@ class GoogleDriveCloudApi extends CloudApi {
   // }
 
   @override
-  Future<List<String?>> upload(
-      String folderName, File file, String cloudFileId) async {
+  Future<List<String?>> upload(String? folderId, String folderName, File file,
+      String cloudFileId) async {
     // await getAccount();
     if (account != null) {
-      final folder = await getFolder(folderName);
-      if (folder.id != null) {
+      folderId ??= (await getFolder(folderName)).id;
+      if (folderId == null) {
         final authHeaders = await account!.authHeaders;
         final authenticateClient = GoogleAuthClient(authHeaders);
         final driveApi = drive.DriveApi(authenticateClient);
@@ -221,7 +221,7 @@ class GoogleDriveCloudApi extends CloudApi {
               uploadMedia: media, $fields: 'id');
         } else {
           //新建文件时才能用这句，否则会报错，移动文件到其他目录使用update方法中的参数addParents removeParents
-          driveFile.parents = ['${folder.id}'];
+          driveFile.parents = [folderId!];
           result = await driveApi.files
               .create(driveFile, uploadMedia: media, $fields: 'id');
         }
@@ -237,12 +237,13 @@ class GoogleDriveCloudApi extends CloudApi {
   }
 
   @override
-  Future<List> downloadStream(String folderName, String cloudFileId) async {
+  Future<List> downloadStream(
+      String? folderId, String folderName, String cloudFileId) async {
     if (account != null) {
-      final folder = await getFolder(folderName);
-      if (folder.id == null) {
-        return [null, 0, null];
-      }
+      // folderId ??= (await getFolder(folderName)).id;
+      // if (folderId == null) {
+      //   return [null, 0, null];
+      // }
 
       final authHeaders = await account!.authHeaders;
       final authenticateClient = GoogleAuthClient(authHeaders);
@@ -324,15 +325,15 @@ class GoogleDriveCloudApi extends CloudApi {
 
   @override
   Future<List<String?>> getFileMetadata(
-      String folderName, String fileName) async {
+      String? folderId, String folderName, String fileName) async {
     if (account != null) {
-      final folder = await getFolder(folderName);
-      if (folder.id != null) {
+      folderId ??= (await getFolder(folderName)).id;
+      if (folderId != null) {
         final authHeaders = await account!.authHeaders;
         final authenticateClient = GoogleAuthClient(authHeaders);
         final driveApi = drive.DriveApi(authenticateClient);
         var fileList = await driveApi.files.list(
-            q: "name='$fileName' and '${folder.id}' in parents and mimeType != 'application/vnd.google-apps.folder' and trashed = false",
+            q: "name='$fileName' and '$folderId' in parents and mimeType != 'application/vnd.google-apps.folder' and trashed = false",
             spaces: 'appDataFolder',
             $fields: 'files(id, version)');
         if (fileList.files?.isNotEmpty == true) {
@@ -341,5 +342,66 @@ class GoogleDriveCloudApi extends CloudApi {
       }
     }
     return const [];
+  }
+
+  @override
+  Future<List<Map>?> getChanges(String? folderId, String folderName) async {
+    if (account == null) {
+      return null;
+    }
+    final folder = await getFolder(folderName);
+    if (folder.id == null) {
+      return null;
+    }
+
+    final authHeaders = await account!.authHeaders;
+    final authenticateClient = GoogleAuthClient(authHeaders);
+    final driveApi = drive.DriveApi(authenticateClient);
+
+    if (startPageToken == null) {
+      drive.StartPageToken response =
+          await driveApi.changes.getStartPageToken();
+      startPageToken = response.startPageToken;
+    }
+
+    if (startPageToken == null) {
+      return null;
+    }
+    drive.ChangeList response = await driveApi.changes.list(
+      startPageToken!,
+      spaces: 'appDataFolder',
+    );
+
+    startPageToken = response.nextPageToken ?? response.newStartPageToken;
+    var result = response.changes
+        ?.takeWhile(
+            (element) => element.file?.parents?.contains(folder.id!) == true)
+        .map((element) {
+      return {
+        "fileId": element.fileId,
+        "removed": element.removed,
+        "version": element.file?.version,
+      };
+    }).toList();
+
+    return result;
+  }
+
+  @override
+  Future<void> init() async {
+    final authHeaders = await account!.authHeaders;
+    final authenticateClient = GoogleAuthClient(authHeaders);
+    final driveApi = drive.DriveApi(authenticateClient);
+    drive.StartPageToken response = await driveApi.changes.getStartPageToken();
+    startPageToken = response.startPageToken;
+  }
+
+  @override
+  Future<String?> getFolderId(String folderName) async {
+    if (account != null) {
+      final folder = await getFolder(folderName);
+      return folder.id;
+    }
+    return null;
   }
 }

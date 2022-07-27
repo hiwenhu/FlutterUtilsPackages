@@ -47,6 +47,10 @@ class FileCloudRepository<CA extends CloudApi> {
     //   });
     // });
     this.cloudFileRoot = cloudFileRoot ?? basename(localFileRoot.path);
+    cloudApi
+        .getFolderId(this.cloudFileRoot)
+        .then((value) => cloudRootFolderId = value)
+        .whenComplete(() => registerObserverForCloudChanges());
   }
   final CA cloudApi;
   final _filesStreamController =
@@ -59,6 +63,7 @@ class FileCloudRepository<CA extends CloudApi> {
 
   final Directory localFileRoot;
   late final String cloudFileRoot;
+  String? cloudRootFolderId;
 
   bool useCloud;
 
@@ -123,11 +128,11 @@ class FileCloudRepository<CA extends CloudApi> {
       //   _filesStreamController.add(const []);
       //   log(e.toString(), stackTrace: st);
       // });
-      if (canUseCloud) {
-        await loadFromCloud();
-      } else {
-        _filesStreamController.add(localFiles);
-      }
+      // if (canUseCloud) {
+      //   loadFromCloud(); //交给每个文件自己处理
+      // } else {
+      _filesStreamController.add(localFiles);
+      // }
     } catch (e, st) {
       _filesStreamController.add(localFiles);
       log(e.toString(), stackTrace: st);
@@ -135,7 +140,7 @@ class FileCloudRepository<CA extends CloudApi> {
   }
 
   Future<void> loadFromCloud() async {
-    var cloudfiles = await cloudApi.listFile(cloudFileRoot);
+    var cloudfiles = await cloudApi.listFile(cloudRootFolderId, cloudFileRoot);
     onCloudFiles(cloudfiles);
   }
 
@@ -227,22 +232,25 @@ class FileCloudRepository<CA extends CloudApi> {
     final index = localFiles.indexWhere((t) => t.file.path == file.path);
 
     if (index >= 0) {
-      var sp = await SharedPreferences.getInstance();
       var cloudFileId = localFiles[index].cloudFileId;
-      var localFile = localFiles[index].file;
-      sp.remove(localFileVersionKey(localFile));
-      localFile.delete();
-
-      localFiles.removeAt(index);
+      await removeLocalFile(index);
       _filesStreamController.add(localFiles);
 
       needSyncFiles[FileSyncOper.delete]?.add(FileCloud(file: file));
       needSyncFiles[FileSyncOper.save]
           ?.removeWhere((element) => element.file == file);
       if (useCloud) {
-        cloudApi.deleteFile(cloudFileRoot, cloudFileId);
+        cloudApi.deleteFile(cloudRootFolderId, cloudFileRoot, cloudFileId);
       }
     }
+  }
+
+  Future<void> removeLocalFile(int index) async {
+    var localFile = localFiles[index].file;
+    localFile.delete();
+    localFiles.removeAt(index);
+    var sp = await SharedPreferences.getInstance();
+    sp.remove(localFileVersionKey(localFile));
   }
 
   // Future<FileCloud> download(FileCloud fileCloud) async {
@@ -276,8 +284,8 @@ class FileCloudRepository<CA extends CloudApi> {
       yield null;
     }
 
-    var result =
-        await cloudApi.downloadStream(cloudFileRoot, fileCloud.cloudFileId);
+    var result = await cloudApi.downloadStream(
+        cloudRootFolderId, cloudFileRoot, fileCloud.cloudFileId);
     assert(result.length >= 3);
     Stream<List<int>>? stream = result[0];
     int length = int.tryParse(result[1].toString()) ?? 1;
@@ -321,8 +329,8 @@ class FileCloudRepository<CA extends CloudApi> {
       return null;
     }
 
-    var cloudFileInfo = await cloudApi.upload(
-        cloudFileRoot, fileCloud.file, fileCloud.cloudFileId);
+    var cloudFileInfo = await cloudApi.upload(cloudRootFolderId, cloudFileRoot,
+        fileCloud.file, fileCloud.cloudFileId);
     if (cloudFileInfo.isEmpty) {
       return null;
     }
@@ -344,11 +352,14 @@ class FileCloudRepository<CA extends CloudApi> {
   }
 
   Future<FileCloud?> localFileReCloud(FileCloud fileCloud) async {
+    if (!canUseCloud) {
+      return null;
+    }
     final index =
         localFiles.indexWhere((t) => t.file.path == fileCloud.file.path);
     if (index >= 0) {
       List<String?> result = await cloudApi.getFileMetadata(
-          cloudFileRoot, basename(fileCloud.file.path));
+          cloudRootFolderId, cloudFileRoot, basename(fileCloud.file.path));
       if (result.length >= 2) {
         localFiles[index] = localFiles[index].copyWith(
           cloudFileId: result[0],
@@ -358,5 +369,35 @@ class FileCloudRepository<CA extends CloudApi> {
       }
     }
     return null;
+  }
+
+  void registerObserverForCloudChanges() {
+    cloudApi.init().whenComplete(
+          () => Timer.periodic(const Duration(seconds: 20), (timer) async {
+            var changes =
+                await cloudApi.getChanges(cloudRootFolderId, cloudFileRoot);
+            if (changes != null) {
+              int changeCount = 0;
+              for (var element in changes) {
+                String? fileId = element['fileId'];
+                bool? removed = element['removed'];
+                final index =
+                    localFiles.indexWhere((t) => t.cloudFileId == fileId);
+                if (removed == true) {
+                  await removeLocalFile(index);
+                  ++changeCount;
+                } else {
+                  int version = getFileVersion(element['version']);
+                  localFiles[index] =
+                      localFiles[index].copyWith(cloudVersion: version);
+                  ++changeCount;
+                }
+              }
+              if (changeCount > 0) {
+                _filesStreamController.add(localFiles);
+              }
+            }
+          }),
+        );
   }
 }

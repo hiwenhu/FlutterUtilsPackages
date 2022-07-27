@@ -6,7 +6,7 @@ enum FileApperanceStatus {
   uploading,
   success,
   failure,
-  conflict
+  reCloud
 }
 
 extension FileApperanceStatusX on FileApperanceStatus {
