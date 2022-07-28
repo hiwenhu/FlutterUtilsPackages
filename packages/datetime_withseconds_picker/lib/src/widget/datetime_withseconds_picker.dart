@@ -6,6 +6,7 @@ import 'dart:async';
 import 'dart:math' as math;
 
 import 'package:datetime_withseconds_picker/src/base/time.dart';
+import 'package:flutter/cupertino.dart';
 import 'package:flutter/rendering.dart';
 import 'package:flutter/services.dart';
 import 'package:flutter/material.dart';
@@ -37,20 +38,6 @@ const BorderRadius _kDefaultBorderRadius =
     BorderRadius.all(Radius.circular(4.0));
 const ShapeBorder _kDefaultShape =
     RoundedRectangleBorder(borderRadius: _kDefaultBorderRadius);
-
-/// Interactive input mode of the time picker dialog.
-///
-/// In [TimePickerEntryMode.dial] mode, a clock dial is displayed and
-/// the user taps or drags the time they wish to select. In
-/// TimePickerEntryMode.input] mode, [TextField]s are displayed and the user
-/// types in the time they wish to select.
-enum TimePickerEntryMode {
-  /// Tapping/dragging on a clock dial.
-  dial,
-
-  /// Text input.
-  input,
-}
 
 /// Provides properties for rendering time picker header fragments.
 @immutable
@@ -526,6 +513,12 @@ class _SecondControl extends StatelessWidget {
     final String formattedSecond = localizations.formatMinute(TimeOfDay(
         hour: fragmentContext.selectedTime.hour,
         minute: fragmentContext.selectedTime.second)); // TODO
+
+    var formattedSecond1 = CupertinoLocalizations.of(context)
+        .timerPickerSecond(fragmentContext.selectedTime.second);
+    var formattedSecond2 = CupertinoLocalizations.of(context)
+        .timerPickerSecondLabel(fragmentContext.selectedTime.second);
+
     final TimeOfDayWithSec nextSecond = fragmentContext.selectedTime.replacing(
       second: (fragmentContext.selectedTime.second + 1) %
           TimeOfDayWithSec.secondsPerMinute,
@@ -1798,7 +1791,9 @@ class _TimePickerInputState extends State<_TimePickerInput>
                             hourLabelText: widget.hourLabelText,
                           ),
                           const SizedBox(height: 8.0),
-                          if (!hourHasError.value && !minuteHasError.value)
+                          if (!hourHasError.value &&
+                              !minuteHasError.value &&
+                              !secondHasError.value)
                             ExcludeSemantics(
                               child: Text(
                                 widget.hourLabelText ??
@@ -1836,7 +1831,9 @@ class _TimePickerInputState extends State<_TimePickerInput>
                             minuteLabelText: widget.minuteLabelText,
                           ),
                           const SizedBox(height: 8.0),
-                          if (!hourHasError.value && !minuteHasError.value)
+                          if (!hourHasError.value &&
+                              !minuteHasError.value &&
+                              !secondHasError.value)
                             ExcludeSemantics(
                               child: Text(
                                 widget.minuteLabelText ??
@@ -1879,8 +1876,8 @@ class _TimePickerInputState extends State<_TimePickerInput>
                             ExcludeSemantics(
                               child: Text(
                                 widget.secondLabelText ??
-                                    MaterialLocalizations.of(context)
-                                        .timePickerMinuteLabel,
+                                    CupertinoLocalizations.of(context)
+                                        .timerPickerSecondLabels[1],
                                 style: theme.textTheme.caption,
                                 maxLines: 1,
                                 overflow: TextOverflow.ellipsis,
@@ -2215,9 +2212,6 @@ class _HourMinuteSecondTextFieldState extends State<_HourMinuteSecondTextField>
   }
 }
 
-/// Signature for when the time picker entry mode is changed.
-typedef EntryModeChangeCallback = void Function(TimePickerEntryMode);
-
 /// A material design time picker designed to appear inside a popup dialog.
 ///
 /// Pass this widget to [showDialog]. The value returned by [showDialog] is the
@@ -2541,8 +2535,8 @@ class _TimePickerWithSecDialogState extends State<TimePickerWithSecDialog>
         MaterialLocalizations.of(context);
     _announceToAccessibility(
       context,
-      localizations.formatTimeOfDay(widget.initialTime.toTimeOfDay(),
-          alwaysUse24HourFormat: media.alwaysUse24HourFormat),//TODO add second
+      formatTimeOfDayWithSec(localizations, widget.initialTime,
+          alwaysUse24HourFormat: media.alwaysUse24HourFormat),
     );
     _announcedInitialTime.value = true;
   }
@@ -2950,4 +2944,41 @@ Future<TimeOfDayWithSec?> showTimeWithSecPicker({
 
 void _announceToAccessibility(BuildContext context, String message) {
   SemanticsService.announce(message, Directionality.of(context));
+}
+
+String? _formatDayPeriod(
+    MaterialLocalizations localizations, TimeOfDay timeOfDay) {
+  switch (timeOfDay.period) {
+    case DayPeriod.am:
+      return localizations.anteMeridiemAbbreviation;
+    case DayPeriod.pm:
+      return localizations.postMeridiemAbbreviation;
+  }
+}
+
+String formatTimeOfDayWithSec(
+    MaterialLocalizations localizations, TimeOfDayWithSec timeOfDayWithSec,
+    {bool alwaysUse24HourFormat = false}) {
+  final timeOfDay = timeOfDayWithSec.toTimeOfDay();
+  final String hour = localizations.formatHour(timeOfDay,
+      alwaysUse24HourFormat: alwaysUse24HourFormat);
+  final String minute = localizations.formatMinute(
+      TimeOfDay(hour: timeOfDayWithSec.hour, minute: timeOfDayWithSec.minute));
+  final String second = localizations.formatMinute(
+      TimeOfDay(hour: timeOfDayWithSec.hour, minute: timeOfDayWithSec.second));
+
+  switch (localizations.timeOfDayFormat(
+      alwaysUse24HourFormat: alwaysUse24HourFormat)) {
+    case TimeOfDayFormat.h_colon_mm_space_a:
+      return '$hour:$minute:$second ${_formatDayPeriod(localizations, timeOfDay)!}';
+    case TimeOfDayFormat.H_colon_mm:
+    case TimeOfDayFormat.HH_colon_mm:
+      return '$hour:$minute:$second';
+    case TimeOfDayFormat.HH_dot_mm:
+      return '$hour.$minute.$second';
+    case TimeOfDayFormat.a_space_h_colon_mm:
+      return '${_formatDayPeriod(localizations, timeOfDay)!} $hour:$minute:$second';
+    case TimeOfDayFormat.frenchCanadian:
+      return '$hour h $minute m $second';
+  }
 }

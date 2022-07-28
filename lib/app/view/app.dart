@@ -3,6 +3,7 @@ import 'package:datetime_withseconds_picker/datetime_withseconds_picker.dart';
 import 'package:file_cloud_repository/file_cloud_repository.dart';
 import 'package:flutter/material.dart';
 import 'package:flutter_bloc/flutter_bloc.dart';
+import 'package:flutter_form_builder/flutter_form_builder.dart';
 import 'package:testimage/app/bloc/app_bloc.dart';
 import 'package:testimage/cloud/switch/cubit/cloud_switch_cubit.dart';
 import 'package:testimage/files_overview/bloc/files_overview_bloc.dart';
@@ -68,29 +69,41 @@ class AppView extends StatefulWidget {
 class _AppViewState extends State<AppView> {
   @override
   Widget build(BuildContext context) {
-    return MaterialApp(
+    return const MaterialApp(
       // theme: theme,
       // home: FlowBuilder<AppStatus>(
       //   state: context.select((AppBloc bloc) => bloc.state.status),
       //   onGeneratePages: onGenerateAppViewPages,
       // ),
-      localizationsDelegates: const [
+      localizationsDelegates: [
         GlobalMaterialLocalizations.delegate,
         GlobalWidgetsLocalizations.delegate,
         GlobalCupertinoLocalizations.delegate,
       ],
-      supportedLocales: const [
+      locale: Locale.fromSubtags(
+          languageCode: 'zh', scriptCode: 'Hans', countryCode: 'CN'),
+      supportedLocales: [
         Locale('en', ''), // English, no country code
+        Locale.fromSubtags(
+            languageCode: 'zh',
+            scriptCode: 'Hans',
+            countryCode: 'CN'), // 'zh_Hans_CN'
       ],
-      home: const FilesOverviewPage(),
-          //const TestShowTimePicker(),
+      home: //const FilesOverviewPage(),
+          TestShowTimePicker(),
     );
   }
 }
 
-class TestShowTimePicker extends StatelessWidget {
+class TestShowTimePicker extends StatefulWidget {
   const TestShowTimePicker({Key? key}) : super(key: key);
 
+  @override
+  State<TestShowTimePicker> createState() => _TestShowTimePickerState();
+}
+
+class _TestShowTimePickerState extends State<TestShowTimePicker> {
+  final GlobalKey<FormBuilderState> _formKey = GlobalKey<FormBuilderState>();
   @override
   Widget build(BuildContext context) {
     return Scaffold(
@@ -100,16 +113,33 @@ class TestShowTimePicker extends StatelessWidget {
       body: SafeArea(
         child: Align(
           alignment: Alignment.center,
-          child: ElevatedButton(
-            child: const Text('show time picker with seconds'),
-            onPressed: () => showTimeWithSecPicker(
-                    context: context,
-                    initialTime: TimeOfDayWithSec.now(),
-                    secondLabelText: 'Second')
-                .then(
-              (value) => print(value.toString()),
-            ),
-          ),
+          child: FormBuilder(
+              key: _formKey,
+              child: Column(
+                children: [
+                  FormBuilderDateTimeWithSecondsPicker(
+                    name: 'timepicker',
+                    resetIcon: IconButton(
+                      onPressed: () {
+                        _formKey.currentState?.fields['timepicker']
+                            ?.didChange(null);
+                      },
+                      icon: const Icon(Icons.close),
+                    ),
+                    onChanged: (value) => print(value.toString()),
+                  ),
+                ],
+              )),
+          // child: ElevatedButton(
+          //   child: const Text('show time picker with seconds'),
+          //   onPressed: () => showTimeWithSecPicker(
+          //           context: context,
+          //           initialTime: TimeOfDayWithSec.now(),
+          //           secondLabelText: 'Second')
+          //       .then(
+          //     (value) => print(value.toString()),
+          //   ),
+          // ),
         ),
       ),
     );
