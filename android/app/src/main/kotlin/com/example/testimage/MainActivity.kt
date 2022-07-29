@@ -1,4 +1,4 @@
-package com.example.testimage
+package com.mk.isql
 
 import io.flutter.embedding.android.FlutterActivity
 

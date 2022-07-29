@@ -117,6 +117,10 @@ class _TestShowTimePickerState extends State<TestShowTimePicker> {
               key: _formKey,
               child: Column(
                 children: [
+                  TextButton(
+                    onPressed: () => throw Exception(),
+                    child: const Text("Throw Test Exception"),
+                  ),
                   FormBuilderDateTimeWithSecondsPicker(
                     name: 'timepicker',
                     resetIcon: IconButton(
