@@ -4,10 +4,10 @@ import 'package:file_cloud_repository/file_cloud_repository.dart';
 import 'package:flutter/material.dart';
 import 'package:flutter_bloc/flutter_bloc.dart';
 import 'package:flutter_form_builder/flutter_form_builder.dart';
+import 'package:sqlparser/sqlparser.dart' hide Column;
 import 'package:testimage/app/bloc/app_bloc.dart';
 import 'package:testimage/cloud/switch/cubit/cloud_switch_cubit.dart';
 import 'package:testimage/files_overview/bloc/files_overview_bloc.dart';
-import 'package:testimage/files_overview/view/files_overview_page.dart';
 import 'package:flutter_localizations/flutter_localizations.dart';
 
 class App<FC extends FileCloudRepository> extends StatelessWidget {
@@ -90,7 +90,64 @@ class _AppViewState extends State<AppView> {
             countryCode: 'CN'), // 'zh_Hans_CN'
       ],
       home: //const FilesOverviewPage(),
-          TestShowTimePicker(),
+          //TestShowTimePicker(),
+          TestSqlparser(),
+    );
+  }
+}
+
+class TestSqlparser extends StatefulWidget {
+  const TestSqlparser({Key? key}) : super(key: key);
+
+  @override
+  State<TestSqlparser> createState() => _TestSqlparserState();
+}
+
+class _TestSqlparserState extends State<TestSqlparser> {
+  final textEditingCtrl = TextEditingController();
+  final parsedEditingCtrl = TextEditingController();
+  @override
+  Widget build(BuildContext context) {
+    return Scaffold(
+      appBar: AppBar(
+        title: const Text('Test SqlParsert'),
+      ),
+      body: SafeArea(
+          child: Column(
+        children: [
+          TextField(
+            controller: textEditingCtrl,
+          ),
+          TextField(
+            controller: parsedEditingCtrl,
+            maxLines: 5,
+          ),
+          ElevatedButton(
+            onPressed: () {
+              String str = String.fromCharCode(92);
+              final tokens = Scanner(textEditingCtrl.text).scanTokens();
+
+              int startIdx = 0;
+              int semicolonIdx = tokens
+                  .indexWhere((element) => element.type == TokenType.semicolon);
+              List<List<Token>> tokenChunks = [];
+              while (semicolonIdx != -1) {
+                tokenChunks.add(tokens.sublist(startIdx, semicolonIdx));
+                startIdx = semicolonIdx + 1;
+                semicolonIdx = tokens.indexWhere(
+                    (element) => element.type == TokenType.semicolon, startIdx);
+              }
+
+              List<String> results = [];
+              for (final chunk in tokenChunks) {
+                results.add(chunk.map((e) => e.lexeme).join(' '));
+              }
+              parsedEditingCtrl.text = results.join('\n');
+            },
+            child: const Text('Parse'),
+          ),
+        ],
+      )),
     );
   }
 }

@@ -677,6 +677,13 @@ packages:
       url: "https://pub.dartlang.org"
     source: hosted
     version: "1.8.2"
+  sqlparser:
+    dependency: "direct main"
+    description:
+      path: "packages/sqlparser"
+      relative: true
+    source: path
+    version: "0.22.0"
   stack_trace:
     dependency: transitive
     description:

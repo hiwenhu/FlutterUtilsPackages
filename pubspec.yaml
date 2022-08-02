@@ -60,6 +60,8 @@ dependencies:
     path: packages/datetime_withseconds_picker
   exception_extension:
     path: packages/exception_extension
+  sqlparser:
+    path: packages/sqlparser
   bloc: ^8.0.3
   path: ^1.8.1
   device_info_plus: ^4.0.0

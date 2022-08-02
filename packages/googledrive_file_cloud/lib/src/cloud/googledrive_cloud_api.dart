@@ -389,11 +389,14 @@ class GoogleDriveCloudApi extends CloudApi {
 
   @override
   Future<void> init() async {
-    final authHeaders = await account!.authHeaders;
-    final authenticateClient = GoogleAuthClient(authHeaders);
-    final driveApi = drive.DriveApi(authenticateClient);
-    drive.StartPageToken response = await driveApi.changes.getStartPageToken();
-    startPageToken = response.startPageToken;
+    if (account != null) {
+      final authHeaders = await account!.authHeaders;
+      final authenticateClient = GoogleAuthClient(authHeaders);
+      final driveApi = drive.DriveApi(authenticateClient);
+      drive.StartPageToken response =
+          await driveApi.changes.getStartPageToken();
+      startPageToken = response.startPageToken;
+    }
   }
 
   @override
