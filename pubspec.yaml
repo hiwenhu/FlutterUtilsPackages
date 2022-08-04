@@ -71,6 +71,7 @@ dependencies:
   flutter_form_builder: ^7.5.0
   firebase_core: ^1.20.0
   firebase_crashlytics: ^2.8.6
+  dots_indicator: ^2.1.0
 
 dev_dependencies:
   flutter_test:

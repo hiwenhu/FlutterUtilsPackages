@@ -128,11 +128,11 @@ class FileCloudRepository<CA extends CloudApi> {
       //   _filesStreamController.add(const []);
       //   log(e.toString(), stackTrace: st);
       // });
-      // if (canUseCloud) {
-      //   loadFromCloud(); //交给每个文件自己处理
-      // } else {
-      _filesStreamController.add(localFiles);
-      // }
+      if (canUseCloud) {
+        await loadFromCloud();
+      } else {
+        _filesStreamController.add(localFiles);
+      }
     } catch (e, st) {
       _filesStreamController.add(localFiles);
       log(e.toString(), stackTrace: st);
@@ -373,7 +373,7 @@ class FileCloudRepository<CA extends CloudApi> {
 
   void registerObserverForCloudChanges() {
     cloudApi.init().whenComplete(
-          () => Timer.periodic(const Duration(seconds: 20), (timer) async {
+          () => Timer.periodic(const Duration(seconds: 600), (timer) async {
             var changes =
                 await cloudApi.getChanges(cloudRootFolderId, cloudFileRoot);
             if (changes != null) {
