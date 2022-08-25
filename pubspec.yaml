@@ -72,6 +72,8 @@ dependencies:
   firebase_core: ^1.20.0
   firebase_crashlytics: ^2.8.6
   dots_indicator: ^2.1.0
+  flutter_slidable: ^2.0.0
+  getwidget: ^3.0.1
 
 dev_dependencies:
   flutter_test:

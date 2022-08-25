@@ -2,8 +2,7 @@ import 'package:flutter/material.dart';
 import 'package:flutter/src/foundation/key.dart';
 import 'package:flutter/src/widgets/framework.dart';
 import 'package:flutter_bloc/flutter_bloc.dart';
-import 'package:test_material/src/general_editor/cubit/general_editor_cubit.dart';
-
+import 'package:testimage/general_editor/cubit/general_editor_cubit.dart';
 class GeneralEditorPage extends StatelessWidget {
   const GeneralEditorPage({
     Key? key,
